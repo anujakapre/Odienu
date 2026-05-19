@@ -1,0 +1,42 @@
+Act as a Principal Mobile Architect and Database Engineer. We are building a multi-file Mobile Fanfiction & Web Novel Reader application using React Native, Expo, and Expo-SQLite. 
+
+This initial step focuses entirely on setting up the local storage, the database schema, and the complex metadata filtering and rendering architecture. Do not skip or approximate any of the following logical rules.
+
+### 🏛️ 1. LOCAL DATABASE CONFIGURATION (Expo-SQLite)
+Initialize an internal database tracking schema with the following fields:
+- workId (String, Primary Key)
+- title (String)
+- author (String)
+- sourceUrl (String, Nullable)
+- sourcePlatform (String: 'AO3', 'FFN', or 'Local Book')
+- currentChapters (Integer, default 0)
+- totalChapters (String, default '?')
+- lastCommentedChapter (Integer, default 0)
+- shelves (JSON String array representing fandoms, e.g., '["Harry Potter", "DC"]')
+- needsReview (Boolean/Integer, default false)
+- status (String: 'Unread', 'Currently Reading', 'Read')
+- dateDownloaded (Timestamp/String)
+- seriesName (String, Nullable)
+- seriesOrder (Integer, default 0)
+- lastReadTimestamp (Timestamp/String, Nullable)
+- activeParagraphIndex (Integer, default 0)
+
+### 🗂️ 2. DASHBOARD DISPLAYS & NESTED SPLIT-SHELVES ENGINE
+Build a multi-lane dashboard that aggregates local database entries vertically into these distinct horizontal-scrolling shelf containers based on these exact rules:
+- Lane 1: "New Updates" -> Items filtering `needsReview == true` with a glowing animated border container.
+- Lane 2: "Currently Reading" -> Filtered strictly for `status == 'Currently Reading'`.
+- Lane 3: "Recently Read" -> Up to 10 entries sorted by `lastReadTimestamp DESC`.
+- Lane 4: "Read This Month" -> Track fics moved to 'Read' status within the current calendar month.
+
+### 🔀 3. THE CRITICAL SPLIT-SHELF NEXUS ALGORITHM (FANDOM LOGIC)
+Implement a robust parsing utility function that maps the backend metadata values into the user interface shelves dynamically. You must write out the code to execute these 4 constraints flawlessly:
+
+1. Nexus Protocol (Multi-Shelf Mirroring): If a story's database row contains multiple fandoms in its `shelves` array (e.g., ['Harry Potter', 'DC']), render that book card on BOTH the Harry Potter shelf and the DC shelf simultaneously. Changing or updating reading metrics on one card must immediately update its mirrored twin card across the other shelf.
+2. Crossover Nexus Shelves: If a book has 2 or more core fandoms specified in its array, automatically generate an entirely new combined row titled "Nexus - [Fandom A] x [Fandom B]" utilizing alphabetically sorted names of the matched tags, separating crossovers from pure solo-fandom tracks.
+3. "Original Fiction" Override: If the tags match "original work" or lack recognizable fandom variables entirely, completely bypass the fandom matrix rules and route it strictly to an isolated "Original Fiction" primary shelf.
+4. Split-Shelf Layout Structure: For every single unique fandom shelf category created, divide its visual layout panel into two stacked mini-horizontal lanes:
+   * Top Track (Active Track): Displays stories flagged as 'Currently Reading' or 'Read' belonging to that fandom, sorted by `lastReadTimestamp DESC`.
+   * Bottom Track (To-Read Sub-Shelf): Titled "[Shelf Name] - To Read", displaying only 'Unread' fics from that fandom, sorted by `dateDownloaded DESC`.
+5. Series Clustering: If 3 or more fics share an identical `seriesName` in the database, collapse them into their own nested horizontal card component container inside that section, enforcing a strict chronological sorting order of `seriesOrder ASC` from left to right.
+
+Seed the local SQLite database with 5 highly detailed mockup fanfiction records on initialization (including a multi-fandom crossover example and a series cluster example) so that the crossover rendering logic, mirroring engine, and stacked split-shelf sub-tracks can be verified on screen immediately. Ensure zero placeholder text is left behind.

@@ -1,0 +1,27 @@
+kind = "mobile"
+previewPath = "/"
+title = "Nexus Reader"
+version = "1.0.0"
+id = "artifacts/nexus-reader"
+router = "expo-domain"
+
+[[integratedSkills]]
+name = "expo"
+version = "1.0.0"
+
+[[services]]
+ensurePreviewReachable = "/status"
+name = "expo"
+paths = [ "/" ]
+localPort = 18117
+
+[services.development]
+run = "pnpm --filter @workspace/nexus-reader run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/nexus-reader", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/nexus-reader", "run", "serve" ]
+
+[services.env]
+PORT = "18117"
+BASE_PATH = "/"

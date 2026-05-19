@@ -1,6 +1,6 @@
-# [Project name]
+# Nexus Reader
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+A mobile fanfiction and web novel reader app with a smart fandom shelf engine, local SQLite database, and a richly-organized multi-lane dashboard.
 
 ## Run & Operate
 
@@ -14,31 +14,51 @@ _Replace the heading above with the project's name, and this line with one sente
 ## Stack
 
 - pnpm workspaces, Node.js 24, TypeScript 5.9
+- Mobile: React Native + Expo SDK 54, Expo Router
+- Local DB: expo-sqlite (native) / AsyncStorage (web fallback)
 - API: Express 5
 - DB: PostgreSQL + Drizzle ORM
 - Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
 - Build: esbuild (CJS bundle)
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/nexus-reader/` — Expo mobile app
+  - `lib/database.ts` — AsyncStorage implementation (web)
+  - `lib/database.native.ts` — expo-sqlite implementation (iOS/Android)
+  - `lib/nexusEngine.ts` — Fandom shelf computation (Nexus Algorithm)
+  - `hooks/useLibrary.ts` — React hook for library state
+  - `components/BookCard.tsx` — Animated book card with needsReview glow
+  - `components/ShelfLane.tsx` — Horizontal scrolling lane
+  - `components/SplitShelf.tsx` — Fandom shelf with Active + To-Read sub-tracks
+  - `components/SeriesCluster.tsx` — Series cluster container
+  - `app/(tabs)/index.tsx` — Dashboard home screen
+  - `app/(tabs)/library.tsx` — Library screen with search/filter
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- **Platform-specific DB files**: `database.native.ts` (SQLite) and `database.ts` (AsyncStorage). Metro automatically picks the correct one per platform. This avoids the `.wasm` bundling issue expo-sqlite has on web.
+- **Nexus Algorithm**: Fic with 2+ fandoms is mirrored across individual fandom shelves AND a new auto-generated "Nexus — A × B" crossover shelf (fandoms sorted alphabetically).
+- **Series Clustering**: If 3+ fics globally share a `seriesName`, they collapse into a `SeriesCluster` component inside their fandom shelf, sorted by `seriesOrder ASC`.
+- **Split-Shelf Layout**: Each fandom shelf has two sub-tracks — Active (Currently Reading/Read, by `lastReadTimestamp DESC`) and To-Read (Unread, by `dateDownloaded DESC`).
+- **"Original Fiction" override**: Fics with `shelves = []` or containing "original work" bypass all fandom matrix logic.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+- **Dashboard**: 4 fixed lanes (New Updates with glow, Currently Reading, Recently Read, Read This Month) + dynamically computed fandom shelves below.
+- **Fandom Shelves**: Per-fandom split views with Nexus crossover detection and series clustering.
+- **Library**: Full searchable/filterable list of all works with status chips.
+- **Local-first**: All data stored in expo-sqlite on device. No server required for core reading experience.
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+_Populate as you build._
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- expo-sqlite requires platform-specific files due to `.wasm` bundling issues in Metro on web.
+- The `initDatabase()` call is idempotent — seeds only if DB is empty.
+- Always run `pnpm install` from workspace root after adding new dependencies to any artifact.
 
 ## Pointers
 
