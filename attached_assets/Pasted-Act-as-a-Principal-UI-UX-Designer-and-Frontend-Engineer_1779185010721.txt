@@ -1,0 +1,30 @@
+Act as a Principal UI/UX Designer and Frontend Engineer. Now that our core database and shelf tracking logic are operational, we need to implement the immersive, decorated theme engine based on my structural design frameworks. Do not use flat, sterile, or plain pastel backgrounds. Every theme must feel highly detailed, cozy, and decorated.
+
+Create a "Dynamic Theme Cycler" component (accessible via a floating action button or header toggle) that allows the user to rotate the entire dashboard app view between these three visual aesthetics:
+
+### 🎨 1. THEME DESIGN SPECS
+- Theme A: "Botanical Library"
+  * Background: A textured light linen/canvas backdrop. Densely layer illustrated trailing green ivy vines creeping down from the top viewport borders and weaving behind container headers.
+  * Structural Shelves: Horizontal lanes must be rendered to look like warm, medium-toned wood shelves, accented with small hand-drawn daisies, pink wildflowers, and tiny mushrooms growing along the dividers.
+  * Dashboard Decor: Place vector-style potted plants strategically in screen margins and empty spaces (e.g., a hanging fern basket, a window-box of bright sunflowers, and a terracotta pot of tulips).
+  * Shelf Mascot: A fluffy black cat vector sleeping curled up on top of a book stack in the empty shelf zones.
+
+- Theme B: "Lo-Fi Café Study"
+  * Background: A warm, light-brown textured wallpaper pattern with subtle vertical stripes and faint line-art coffee doodles.
+  * Structural Shelves: Dark, heavy oak wood shelf beams supported by visual industrial metal brackets on the left and right margins.
+  * Dashboard Decor: The top of the viewport features a glowing hanging pendant lamp vector and a string of warm fairy lights across the layout. Add small decorative visual assets: a vintage analog radio, a blue watering can with a daisy pattern, a small stacked pile of leather-bound classic books, and a plate with a croissant next to a steaming coffee mug at the footer base.
+  * Accent Art: A simple framed butterfly sketch hanging on the wall background.
+
+- Theme C: "Whimsical Origami"
+  * Background: A soft, textured cream-white sheet look featuring faint line-art cloud formations.
+  * Structural Shelves: Floating modern dividers styled with a playful blue-to-white gradient.
+  * Dashboard Decor: Fluffy cartoon cloud accents that float directly behind the shelf title banners, with small orange wooden step-ladders leaning between shelves.
+  * Shelf Mascot: An adorable, round white origami-style paper cat with pink blush marks. 
+  * Accent Art: Scatter small geometric origami animal stickers (like a paper crane and a folding bunny) across the dashboard's empty states.
+
+### 📐 2. VISUAL CARDS & SCANNABILITY
+- Modify our existing book card components so that they look like stylized hand-drawn book spines or covers with clear line-weight borders rather than flat material design blocks.
+- In Lane 1 ("New Updates"), ensure books with `needsReview == true` feature a soft, pulsing glowing animated border frame.
+- Add "Empty State" components using the designated mascot themes (e.g., a tiny white reading ghost holding a massive book stack) when a lane contains zero books.
+
+Keep all the existing SQLite data sync, mirroring protocols, and split-shelf sorting algorithms perfectly intact. Integrate this theme selection smoothly with React Native local state or context so it updates instantly across the UI layout. Ensure zero placeholder text remains.

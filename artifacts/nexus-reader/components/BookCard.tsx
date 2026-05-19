@@ -1,22 +1,18 @@
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect } from "react";
-import {
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, {
-  useSharedValue,
   useAnimatedStyle,
+  useSharedValue,
   withRepeat,
   withSequence,
   withTiming,
 } from "react-native-reanimated";
+import Svg, { Line, Path } from "react-native-svg";
 
-import { Work } from "@/lib/database";
+import { useTheme } from "@/contexts/ThemeContext";
 import { useColors } from "@/hooks/useColors";
+import { Work } from "@/lib/database";
 
 const FANDOM_GRADIENTS: Record<string, readonly [string, string]> = {
   "Harry Potter": ["#4c1d95", "#1e0a3c"],
@@ -24,7 +20,6 @@ const FANDOM_GRADIENTS: Record<string, readonly [string, string]> = {
   "Marvel Avengers": ["#7f1d1d", "#3b0a0a"],
   "Original Fiction": ["#064e3b", "#012118"],
 };
-
 const FALLBACK_GRADIENTS: readonly [string, string][] = [
   ["#1e3a5f", "#0a1628"],
   ["#2d1b69", "#1a0e3d"],
@@ -33,9 +28,42 @@ const FALLBACK_GRADIENTS: readonly [string, string][] = [
   ["#1a1f3a", "#0d1020"],
 ];
 
-function getGradient(shelves: string[]): readonly [string, string] {
+const BOTANICAL_GRADIENTS: Record<string, readonly [string, string]> = {
+  "Harry Potter": ["#6b3fa0", "#3b1f70"],
+  "DC Comics": ["#1e4a8a", "#0a2860"],
+  "Marvel Avengers": ["#8B1a1a", "#5c0f0f"],
+  "Original Fiction": ["#2d6e40", "#0f3020"],
+};
+
+const LOFI_GRADIENTS: Record<string, readonly [string, string]> = {
+  "Harry Potter": ["#4a2870", "#2a1040"],
+  "DC Comics": ["#1a3060", "#0a1830"],
+  "Marvel Avengers": ["#6a1818", "#3a0808"],
+  "Original Fiction": ["#1a4030", "#0a2018"],
+};
+
+const ORIGAMI_GRADIENTS: Record<string, readonly [string, string]> = {
+  "Harry Potter": ["#8060c0", "#5040a0"],
+  "DC Comics": ["#4080c0", "#2060a0"],
+  "Marvel Avengers": ["#c04040", "#a02020"],
+  "Original Fiction": ["#40a080", "#208060"],
+};
+
+function getGradient(
+  shelves: string[],
+  themeId: string
+): readonly [string, string] {
+  const map =
+    themeId === "botanical"
+      ? BOTANICAL_GRADIENTS
+      : themeId === "lofi"
+      ? LOFI_GRADIENTS
+      : themeId === "origami"
+      ? ORIGAMI_GRADIENTS
+      : FANDOM_GRADIENTS;
+
   for (const shelf of shelves) {
-    if (FANDOM_GRADIENTS[shelf]) return FANDOM_GRADIENTS[shelf];
+    if (map[shelf]) return map[shelf];
   }
   const hash = shelves
     .join("")
@@ -69,6 +97,12 @@ function getStatusColor(
   }
 }
 
+const HAND_DRAWN_BORDER: Record<string, string> = {
+  botanical: "#8B6914",
+  lofi: "#e8a857",
+  origami: "#5b9bd5",
+};
+
 interface BookCardProps {
   work: Work;
   showGlow?: boolean;
@@ -78,11 +112,16 @@ interface BookCardProps {
 
 export function BookCard({ work, showGlow, onPress, compact }: BookCardProps) {
   const colors = useColors();
+  const { themeId } = useTheme();
   const glowOpacity = useSharedValue(0);
-  const gradient = getGradient(work.shelves);
+  const gradient = getGradient(work.shelves, themeId);
 
   const cardWidth = compact ? 130 : 155;
   const cardHeight = compact ? 185 : 220;
+  const coverHeight = cardHeight * 0.48;
+
+  const isThemed = themeId !== "default";
+  const handDrawnColor = HAND_DRAWN_BORDER[themeId] ?? colors.primary;
 
   useEffect(() => {
     if (work.needsReview || showGlow) {
@@ -106,10 +145,7 @@ export function BookCard({ work, showGlow, onPress, compact }: BookCardProps) {
   const progress =
     work.totalChapters === "?"
       ? null
-      : Math.min(
-          1,
-          work.currentChapters / parseInt(work.totalChapters, 10)
-        );
+      : Math.min(1, work.currentChapters / parseInt(work.totalChapters, 10));
 
   return (
     <Pressable
@@ -123,7 +159,11 @@ export function BookCard({ work, showGlow, onPress, compact }: BookCardProps) {
         <Animated.View
           style={[
             styles.glowBorder,
-            { width: cardWidth + 4, height: cardHeight + 4, borderColor: colors.updateGlow },
+            {
+              width: cardWidth + 4,
+              height: cardHeight + 4,
+              borderColor: colors.updateGlow,
+            },
             glowAnimStyle,
           ]}
         />
@@ -136,13 +176,30 @@ export function BookCard({ work, showGlow, onPress, compact }: BookCardProps) {
             height: cardHeight,
             backgroundColor: colors.card,
             borderRadius: colors.radius,
-            borderColor: colors.border,
+            borderColor: isThemed ? "transparent" : colors.border,
+            borderWidth: isThemed ? 0 : 1,
           },
+          Platform.select({
+            ios: {
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.22,
+              shadowRadius: 8,
+            },
+            android: { elevation: 6 },
+            web: {
+              boxShadow: "0 4px 12px rgba(0,0,0,0.22)",
+            },
+            default: {},
+          }),
         ]}
       >
         <LinearGradient
           colors={gradient as [string, string]}
-          style={[styles.cover, { height: cardHeight * 0.5, borderRadius: colors.radius }]}
+          style={[
+            styles.cover,
+            { height: coverHeight, borderRadius: colors.radius },
+          ]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >
@@ -155,8 +212,20 @@ export function BookCard({ work, showGlow, onPress, compact }: BookCardProps) {
             <Text style={styles.platformText}>{work.sourcePlatform}</Text>
           </View>
           {work.needsReview && (
-            <View style={[styles.newBadge, { backgroundColor: colors.updateGlow }]}>
-              <Text style={styles.newBadgeText}>NEW</Text>
+            <View
+              style={[
+                styles.newBadge,
+                { backgroundColor: colors.updateGlow },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.newBadgeText,
+                  { color: colors.accentForeground },
+                ]}
+              >
+                NEW
+              </Text>
             </View>
           )}
         </LinearGradient>
@@ -182,26 +251,73 @@ export function BookCard({ work, showGlow, onPress, compact }: BookCardProps) {
                 { backgroundColor: getStatusColor(work.status, colors) },
               ]}
             />
-            <Text style={[styles.chapText, { color: colors.mutedForeground }]}>
+            <Text
+              style={[styles.chapText, { color: colors.mutedForeground }]}
+            >
               {work.currentChapters}/{work.totalChapters}
             </Text>
           </View>
 
           {progress !== null && (
-            <View style={[styles.progressBar, { backgroundColor: colors.border }]}>
+            <View
+              style={[
+                styles.progressBar,
+                { backgroundColor: colors.border },
+              ]}
+            >
               <View
                 style={[
                   styles.progressFill,
                   {
                     width: `${progress * 100}%`,
                     backgroundColor:
-                      work.status === "Read" ? colors.statusRead : colors.primary,
+                      work.status === "Read"
+                        ? colors.statusRead
+                        : colors.primary,
                   },
                 ]}
               />
             </View>
           )}
         </View>
+
+        {/* Hand-drawn border overlay for themed modes */}
+        {isThemed && (
+          <Svg
+            width={cardWidth}
+            height={cardHeight}
+            style={StyleSheet.absoluteFill}
+            pointerEvents="none"
+          >
+            <Path
+              d={`M 4,3 L ${cardWidth - 5},2 L ${cardWidth - 3},${
+                cardHeight - 4
+              } L 3,${cardHeight - 3} Z`}
+              stroke={handDrawnColor}
+              strokeWidth={2}
+              fill="none"
+              strokeLinejoin="round"
+            />
+            <Line
+              x1={cardWidth - 22}
+              y1={5}
+              x2={cardWidth - 5}
+              y2={22}
+              stroke={handDrawnColor}
+              strokeWidth={1.2}
+              opacity={0.45}
+            />
+            <Line
+              x1={4}
+              y1={cardHeight - 22}
+              x2={22}
+              y2={cardHeight - 4}
+              stroke={handDrawnColor}
+              strokeWidth={1.2}
+              opacity={0.45}
+            />
+          </Svg>
+        )}
       </View>
     </Pressable>
   );
@@ -222,16 +338,6 @@ const styles = StyleSheet.create({
   },
   card: {
     overflow: "hidden",
-    borderWidth: 1,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-      },
-      android: { elevation: 6 },
-    }),
   },
   cover: {
     width: "100%",
@@ -257,7 +363,6 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   newBadgeText: {
-    color: "#0f0e17",
     fontSize: 9,
     fontWeight: "800",
     letterSpacing: 1,

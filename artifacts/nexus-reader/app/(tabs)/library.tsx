@@ -11,6 +11,8 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { router } from "expo-router";
+
 import { BookCard } from "@/components/BookCard";
 import { useColors } from "@/hooks/useColors";
 import { useLibrary } from "@/hooks/useLibrary";
@@ -141,7 +143,10 @@ export default function LibraryScreen() {
         }
         renderItem={({ item }) => (
           <View style={styles.gridItem}>
-            <BookCard work={item} />
+            <BookCard
+              work={item}
+              onPress={(w) => router.push(`/reader/${w.workId}`)}
+            />
           </View>
         )}
       />

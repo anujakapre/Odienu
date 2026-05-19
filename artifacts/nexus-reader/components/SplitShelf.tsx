@@ -1,21 +1,37 @@
+import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
-import {
-  FlatList,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { BookCard } from "@/components/BookCard";
 import { SeriesCluster } from "@/components/SeriesCluster";
+import { ShelfFlowerAccent } from "@/components/decorations/BotanicalDecorations";
+import { useTheme } from "@/contexts/ThemeContext";
 import { useColors } from "@/hooks/useColors";
 import { Work } from "@/lib/database";
 import { FandomShelf, TrackItem } from "@/lib/nexusEngine";
+import Svg, { Line, Rect } from "react-native-svg";
 
-interface SplitShelfProps {
-  shelf: FandomShelf;
-  onPressWork?: (work: Work) => void;
+function MiniMetalBracket({ side }: { side: "left" | "right" }) {
+  return (
+    <Svg width={10} height={14} pointerEvents="none">
+      <Rect
+        x={side === "right" ? 1 : 5}
+        y={0}
+        width={4}
+        height={14}
+        rx={1}
+        fill="#6b6b6b"
+      />
+      <Rect
+        x={side === "right" ? 0 : 1}
+        y={1}
+        width={9}
+        height={4}
+        rx={1}
+        fill="#8a8a8a"
+      />
+    </Svg>
+  );
 }
 
 function TrackRow({
@@ -54,16 +70,39 @@ function TrackRow({
   );
 }
 
+interface SplitShelfProps {
+  shelf: FandomShelf;
+  onPressWork?: (work: Work) => void;
+}
+
 export function SplitShelf({ shelf, onPressWork }: SplitShelfProps) {
   const colors = useColors();
+  const { themeId } = useTheme();
 
   const hasActive = shelf.activeTrack.length > 0;
   const hasToRead = shelf.toReadTrack.length > 0;
 
   if (!hasActive && !hasToRead) return null;
 
+  const isThemed = themeId !== "default";
+
   return (
-    <View style={[styles.container, { borderColor: colors.border }]}>
+    <View
+      style={[
+        styles.container,
+        {
+          borderColor: colors.border,
+          backgroundColor: themeId === "botanical"
+            ? "#fffdf4"
+            : themeId === "lofi"
+            ? "#1e0c06"
+            : themeId === "origami"
+            ? "#ffffff"
+            : colors.card,
+        },
+      ]}
+    >
+      {/* Header */}
       <View style={styles.shelfHeader}>
         <View style={styles.titleRow}>
           {shelf.isNexus && (
@@ -73,7 +112,9 @@ export function SplitShelf({ shelf, onPressWork }: SplitShelfProps) {
                 { backgroundColor: colors.nexusGlow + "33" },
               ]}
             >
-              <Text style={[styles.nexusBadgeText, { color: colors.nexusGlow }]}>
+              <Text
+                style={[styles.nexusBadgeText, { color: colors.nexusGlow }]}
+              >
                 NEXUS
               </Text>
             </View>
@@ -96,7 +137,10 @@ export function SplitShelf({ shelf, onPressWork }: SplitShelfProps) {
                 ]}
               >
                 <Text
-                  style={[styles.fandomPillText, { color: colors.mutedForeground }]}
+                  style={[
+                    styles.fandomPillText,
+                    { color: colors.mutedForeground },
+                  ]}
                 >
                   {f}
                 </Text>
@@ -106,13 +150,51 @@ export function SplitShelf({ shelf, onPressWork }: SplitShelfProps) {
         )}
       </View>
 
-      <View
-        style={[styles.divider, { backgroundColor: colors.border }]}
-      />
+      {/* Themed shelf bar */}
+      {isThemed && themeId === "origami" && (
+        <LinearGradient
+          colors={[colors.shelfColor, colors.shelfHighlight]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.origamiDivider}
+        />
+      )}
+      {isThemed && (themeId === "botanical" || themeId === "lofi") && (
+        <View
+          style={[styles.woodDivider, { backgroundColor: colors.shelfColor }]}
+        >
+          <View
+            style={[
+              styles.woodHighlight,
+              { backgroundColor: colors.shelfHighlight + "55" },
+            ]}
+          />
+          {themeId === "lofi" && (
+            <View style={styles.bracketRow}>
+              <MiniMetalBracket side="left" />
+              <View style={{ flex: 1 }} />
+              <MiniMetalBracket side="right" />
+            </View>
+          )}
+          {themeId === "botanical" && (
+            <View style={styles.flowerRow}>
+              <ShelfFlowerAccent />
+            </View>
+          )}
+        </View>
+      )}
+      {!isThemed && (
+        <View
+          style={[styles.plainDivider, { backgroundColor: colors.border }]}
+        />
+      )}
 
+      {/* Active track */}
       {hasActive && (
         <View style={styles.track}>
-          <Text style={[styles.trackLabel, { color: colors.mutedForeground }]}>
+          <Text
+            style={[styles.trackLabel, { color: colors.mutedForeground }]}
+          >
             Active
           </Text>
           <TrackRow items={shelf.activeTrack} onPressWork={onPressWork} />
@@ -120,13 +202,18 @@ export function SplitShelf({ shelf, onPressWork }: SplitShelfProps) {
       )}
 
       {hasActive && hasToRead && (
-        <View style={[styles.trackDivider, { backgroundColor: colors.border }]} />
+        <View
+          style={[styles.trackDivider, { backgroundColor: colors.border }]}
+        />
       )}
 
+      {/* To Read track */}
       {hasToRead && (
         <View style={styles.track}>
-          <Text style={[styles.trackLabel, { color: colors.mutedForeground }]}>
-            {shelf.displayName} \u2014 To Read
+          <Text
+            style={[styles.trackLabel, { color: colors.mutedForeground }]}
+          >
+            {`${shelf.displayName} \u2014 To Read`}
           </Text>
           <TrackRow items={shelf.toReadTrack} onPressWork={onPressWork} />
         </View>
@@ -183,9 +270,38 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: "600",
   },
-  divider: {
+  plainDivider: {
     height: 1,
     marginHorizontal: 14,
+    marginBottom: 4,
+  },
+  woodDivider: {
+    height: 18,
+    overflow: "hidden",
+  },
+  woodHighlight: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 3,
+  },
+  bracketRow: {
+    position: "absolute",
+    top: 0,
+    left: 10,
+    right: 10,
+    bottom: 0,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  flowerRow: {
+    position: "absolute",
+    right: 10,
+    top: 1,
+  },
+  origamiDivider: {
+    height: 10,
     marginBottom: 4,
   },
   track: {
