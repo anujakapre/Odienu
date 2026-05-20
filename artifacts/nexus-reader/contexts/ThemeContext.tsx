@@ -32,14 +32,20 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [themeId, setThemeId] = useState<ThemeId>("default");
 
   useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY)
-      .then((saved) => {
+    let mounted = true;
+    (async () => {
+      try {
+        const saved = await AsyncStorage.getItem(STORAGE_KEY);
+        if (!mounted) return;
         const next = resolveThemeId(saved);
-        if (next !== "default") {
-          setThemeId(next);
-        }
-      })
-      .catch(() => {});
+        setThemeId(next);
+      } catch {
+        if (mounted) setThemeId("default");
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const cycleTheme = useCallback(() => {
