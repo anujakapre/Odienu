@@ -10,7 +10,7 @@ import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import * as SystemUI from "expo-system-ui";
 import React, { useEffect } from "react";
-import { useColorScheme } from "react-native";
+import { useColorScheme, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -35,7 +35,7 @@ function RootLayoutNav() {
 function AppShell() {
   const { config, loading, chooseDownloadFolder } = useAppConfig();
 
-  if (loading || !config) return null;
+  if (loading || !config) return <View style={{ flex: 1 }} />;
   if (!config.user_download_folder) {
     return <OnboardingWizard onComplete={chooseDownloadFolder} />;
   }
