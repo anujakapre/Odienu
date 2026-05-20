@@ -1,0 +1,71 @@
+Act as a Principal Mobile Architect, Full-Stack Engineer, and UI/UX Designer. We are continuing development directly on top of our existing application foundation in this workspace. The database tracking schema and the nested split-shelf fandom mirroring engine are already initialized in SQLite.
+
+Please execute the following upgrades and features across the existing codebase. Do not use placeholder comments or leave functions half-written.
+
+### 🏷️ 1. GLOBAL BRANDING REFACTOR
+- Locate the root 'app.json' or configuration manifest. Rewrite the app name, slug, and displayName fields to be exactly "Oidenu".
+- Update all primary dashboard header titles, loading views, and menu labels from old placeholder names to explicitly read "Oidenu".
+
+### 🎨 2. THEME ENGINE EXPANSION (7 High-Detail Illustrated Themes)
+Integrate the following 7 distinct, highly decorated visual style configurations into our state-managed Dynamic Theme Cycler. Every single theme must explicitly implement its unique Background, Structural Shelves, Accent Art, and Shelf Mascot as detailed below:
+
+- Theme A: "Botanical Library" (Default)
+  * Background Canvas: Textured light linen canvas with a trailing pattern of illustrated green ivy vines creeping down from the margins.
+  * Structural Shelves: Sturdy, medium-toned wood dividers wrapped by small pink wildflowers and tiny mushrooms.
+  * Accent Art: Vector potted hanging ferns, a window-box of sunflowers, and a terracotta pot of tulips decorating empty margins.
+  * Shelf Mascot: A beautifully detailed, majestic weeping Willow Tree graphic centered in empty shelf zones.
+
+- Theme B: "Oidenu Cloudscape"
+  * Background Canvas: A detailed visual texture of a soft, bright cerulean blue sky (#4A90E2) layered with illustrated, cartoon-style fluffy white clouds (#FFFFFF).
+  * Structural Shelves: Horizontal lanes rendered as floating white cloud platforms, accented with tiny, geometric orange wooden ladders leaning between layers.
+  * Accent Art: Visual strings of smiling star doodles and little drifting cloud formations behind child containers.
+  * Shelf Mascot: An adorable, friendly visual illustration of a floating, cute Cloud Sky Whale. Header text uses a playful, round white font (#FFFFFF).
+
+- Theme C: "Shire Sanctum"
+  * Background Canvas: A rich, textured natural-green rolling hills landscape graphic framed by decorative mossy stone archways tracing container borders.
+  * Structural Shelves: Heavy, roughly-hewn oak wood beams supported by visual forged iron scroll brackets.
+  * Accent Art: Miniature vector illustrations of a round, bright-green Hobbit-hole door, a hanging brass lantern, a stack of ancient leather-bound books, and a long-stemmed pipe at the base.
+  * Shelf Mascot: A glowing, ethereal Elven Deer (or Gandalf-inspired figure) positioned in empty tracks. Uses old-world calligraphic header fonts.
+
+- Theme D: "Serene Blush Study"
+  * Background Canvas: A soft, text-friendly matte baby-pink background canvas texture (#FADADD).
+  * Structural Shelves: Delicate, minimalist white-washed wood slats accented with thin gold trim lines.
+  * Accent Art: A top viewport string of glowing warm-pink fairy lights woven with white baby's breath flowers, alongside a glass vase of pink tulips and a cozy chunky knit blanket vector.
+  * Shelf Mascot: A soft, ultra-cute round white Bunny sleeping comfortably.
+
+- Theme E: "Whimsical Origami"
+  * Background Canvas: A soft, textured cream-white sheet paper look featuring faint line-art cloud formations.
+  * Structural Shelves: Floating modern dividers styled with a playful blue-to-white gradient.
+  * Accent Art: Fluffy cartoon cloud accents that float directly behind the shelf title banners, with small orange wooden step-ladders leaning between shelves. Scatter small geometric origami animal stickers (like a paper crane and a folding bunny) across the dashboard's empty states.
+  * Shelf Mascot: An adorable, round white origami-style paper cat with pink blush marks.
+
+- Theme F: "Viking Berk" (HTTYD-Inspired)
+  * Background Canvas: A weathered, rugged, cool grey-blue Nordic stone or ocean-wave texture (#3A4F5C) mimicking foggy sea cliffs.
+  * Structural Shelves: Thick, dark iron-banded logs or rustic distressed driftwood beams.
+  * Accent Art: Hand-drawn shield patterns hanging on the dividers, small visual vector campfire embers crackling in the footer, and minimalist dragon silhouette runes etched subtly into the container margins.
+  * Shelf Mascot: A cute, stylized baby dragon curling up and sleeping deeply next to a small wooden shield.
+
+- Theme G: "Lavender Phantasm"
+  * Background Canvas: A soothing light lavender pastel background (#E8EAF6) layered with faint, hand-drawn vector doodles of sparkling stars and floating cloud shapes.
+  * Structural Shelves: Horizontal lanes styled as translucent velvet bands casting a soft violet drop shadow underneath the book tracks.
+  * Accent Art: An illustrated window sill near the top holding an amethyst crystal cluster and a trailing purple heart vine plant (tradescantia) hanging down. Margins feature cute decorative sticker badges of a tiny white ghost wearing in-ear headphones, completely zoned-out while crocheting a ball of yarn.
+  * Shelf Mascot: A charming, friendly little Ghost holding an open book and reading intently. Typography uses a deep indigo-purple tone (#3F51B5) for headers.
+
+### 📁 3. ONBOARDING STORAGE PATH LOCK
+- On app launch, query the local database/AsyncStorage configuration row. If `user_download_folder` is unassigned or null, immediately intercept the render tree.
+- Block access to the library dashboard and mount an onboarding wizard component. This view must prompt the user via an automated native path-picker workflow to confirm or set their target storage directory folder inside the sandboxed file system framework, committing that path string permanently to database state before unlocking dashboard navigation.
+
+### 🔊 4. BACKGROUND AUDIO TTS ENGINE (`expo-speech`)
+- Create a text player utility service that accepts a targeted chapter data block.
+- Process the input text using a clean regular expression to completely strip away HTML/XML bracket elements, normalizing the text into clean strings.
+- Chunk the raw text body into an array of complete individual sentences. 
+- Feed sentences sequentially into `expo-speech` or a highly stable native speech thread, ensuring background parameters are explicitly enabled so audiobook playback persists cleanly when the mobile device screen locks, dims, or sleeps.
+- Real-Time Bookmarking: Upon the successful completion event of each sentence array index, immediately issue a non-blocking asynchronous local SQLite update query writing the exact progress tracker integer (`activeParagraphIndex`) directly to that book's tracking row.
+
+### 🔄 5. FICHUB SYNCHRONIZATION PIPELINE (Network Fetch Router)
+- Build an automated update checker function for non-AO3/FFN web novels.
+- Fetch meta updates from the public FicHub API: `https://fichub.net/api/v0/meta?q=` concatenated with the record's URL payload.
+- De-Duplication & Multi-Version Merge Logic: If the API response field `live_chapters` returns an integer value higher than the local database item's `currentChapters` field, pull down the updated text chapters. Automatically delete or overwrite the old document cache data block, update the database count string, and flip the tracking property `needsReview = 1` (triggering the glowing animated update banner on the user's dashboard). 
+- Crucial Constraint: The update merge mechanism must cleanly preserve the user's existing `activeParagraphIndex` progress bookmark location so they don't lose their place in the story. Push a native system Toast message alerting the user to the update instead of popping up an active comment sheet view.
+
+Generate clean, modular React Native components using Expo hooks and update the stylesheet bindings dynamically across all layout lanes based on the selected theme state. Ensure zero placeholder text remains.

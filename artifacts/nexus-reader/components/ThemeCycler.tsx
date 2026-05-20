@@ -1,49 +1,50 @@
 import React, { useEffect } from "react";
-import {
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Pressable, StyleSheet, Text } from "react-native";
 import Animated, {
-  useSharedValue,
   useAnimatedStyle,
+  useSharedValue,
   withSpring,
   withTiming,
 } from "react-native-reanimated";
 
+import { ThemeId } from "@/constants/themes";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useColors } from "@/hooks/useColors";
-import { ThemeId } from "@/constants/themes";
 
 const THEME_ICONS: Record<ThemeId, string> = {
   default: "✦",
   botanical: "❧",
-  lofi: "♨",
-  origami: "✿",
+  cloudscape: "☁",
+  shire: "♣",
+  blush: "✿",
+  origami: "✂",
+  viking: "⛵",
+  lavender: "✧",
 };
 
 const THEME_SHORT: Record<ThemeId, string> = {
   default: "Dark",
   botanical: "Botanical",
-  lofi: "Lo-Fi",
+  cloudscape: "Cloudscape",
+  shire: "Shire",
+  blush: "Blush",
   origami: "Origami",
+  viking: "Viking",
+  lavender: "Lavender",
 };
 
 export function ThemeCycler() {
   const { themeId, cycleTheme } = useTheme();
   const colors = useColors();
   const scale = useSharedValue(1);
-  const rotateZ = useSharedValue(0);
+  const rotate = useSharedValue(0);
 
   useEffect(() => {
-    rotateZ.value = withTiming(rotateZ.value + 360, { duration: 400 });
-  }, [themeId]);
+    rotate.value = withTiming(rotate.value + 360, { duration: 400 });
+  }, [themeId, rotate]);
 
   const animStyle = useAnimatedStyle(() => ({
-    transform: [
-      { scale: scale.value },
-    ],
+    transform: [{ scale: scale.value }, { rotateZ: `${rotate.value}deg` }],
   }));
 
   function handlePress() {

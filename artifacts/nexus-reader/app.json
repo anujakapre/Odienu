@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Nexus Reader",
-    "slug": "nexus-reader",
+    "name": "Oidenu",
+    "slug": "oidenu",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "nexus-reader",
+    "scheme": "oidenu",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "splash": {

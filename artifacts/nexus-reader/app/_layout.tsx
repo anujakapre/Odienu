@@ -16,7 +16,9 @@ import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { OnboardingWizard } from "@/components/OnboardingWizard";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { useAppConfig } from "@/hooks/useAppConfig";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -28,6 +30,17 @@ function RootLayoutNav() {
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
     </Stack>
   );
+}
+
+function AppShell() {
+  const { config, loading, chooseDownloadFolder } = useAppConfig();
+
+  if (loading || !config) return null;
+  if (!config.user_download_folder) {
+    return <OnboardingWizard onComplete={chooseDownloadFolder} />;
+  }
+
+  return <RootLayoutNav />;
 }
 
 export default function RootLayout() {
@@ -60,7 +73,7 @@ export default function RootLayout() {
           <QueryClientProvider client={queryClient}>
             <GestureHandlerRootView style={{ flex: 1 }}>
               <KeyboardProvider>
-                <RootLayoutNav />
+                <AppShell />
               </KeyboardProvider>
             </GestureHandlerRootView>
           </QueryClientProvider>

@@ -47,7 +47,7 @@ const PARAGRAPH_POOL = [
 
 function seededIndex(seed: string, max: number): number {
   let hash = 0;
-  for (let i = 0; i < seed.length; i++) {
+  for (let i = 0; i < seed.length; i += 1) {
     hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
   }
   return hash % max;
@@ -58,7 +58,7 @@ function generateChapterContent(workId: string, chapterNum: number): string[] {
   const indices: number[] = [];
   const used = new Set<number>();
 
-  for (let i = 0; indices.length < PARAGRAPHS_PER_CHAPTER; i++) {
+  for (let i = 0; indices.length < PARAGRAPHS_PER_CHAPTER; i += 1) {
     const idx = seededIndex(`${seed}-${i}`, PARAGRAPH_POOL.length);
     if (!used.has(idx) || used.size >= PARAGRAPH_POOL.length) {
       indices.push(idx);
@@ -84,25 +84,15 @@ export default function ReaderScreen() {
   const [showControls, setShowControls] = useState(false);
   const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const work = useMemo(
-    () => works.find((w) => w.workId === workId),
-    [works, workId]
-  );
-
+  const work = useMemo(() => works.find((w) => w.workId === workId), [works, workId]);
   const fontSize = FONT_SIZES[fontSizeIdx];
   const lineSpacing = LINE_SPACINGS[lineSpacingIdx];
   const lineHeight = fontSize * lineSpacing;
-
-  const chapterNum = work
-    ? Math.max(1, work.currentChapters)
-    : 1;
-
+  const chapterNum = work ? Math.max(1, work.currentChapters) : 1;
   const paragraphs = useMemo(
-    () =>
-      workId ? generateChapterContent(workId, chapterNum) : [],
+    () => (workId ? generateChapterContent(workId, chapterNum) : []),
     [workId, chapterNum]
   );
-
   const chapterStartIndex = (chapterNum - 1) * PARAGRAPHS_PER_CHAPTER;
   const localParagraph = work
     ? Math.min(
@@ -110,19 +100,20 @@ export default function ReaderScreen() {
         Math.max(0, work.activeParagraphIndex - chapterStartIndex)
       )
     : 0;
-
   const estimatedParaHeight = fontSize * lineSpacing * 5 + 28;
   const headerHeight = 180;
 
   useEffect(() => {
     if (scrollRef.current && localParagraph > 0) {
       const y = headerHeight + localParagraph * estimatedParaHeight;
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         scrollRef.current?.scrollTo({ y, animated: false });
       }, 150);
+      return () => clearTimeout(timer);
     }
     setCurrentParagraph(localParagraph);
-  }, [work?.workId]);
+    return undefined;
+  }, [localParagraph, estimatedParaHeight]);
 
   function handleScroll(event: { nativeEvent: { contentOffset: { y: number } } }) {
     const y = event.nativeEvent.contentOffset.y;
@@ -136,9 +127,7 @@ export default function ReaderScreen() {
       const globalIndex = chapterStartIndex + para;
       if (saveTimeout.current) clearTimeout(saveTimeout.current);
       saveTimeout.current = setTimeout(() => {
-        updateProgress(work.workId, work.currentChapters, globalIndex).catch(
-          () => {}
-        );
+        void updateProgress(work.workId, work.currentChapters, globalIndex);
       }, 1200);
     }
   }
@@ -147,59 +136,43 @@ export default function ReaderScreen() {
     if (saveTimeout.current) clearTimeout(saveTimeout.current);
     if (work) {
       const globalIndex = chapterStartIndex + currentParagraph;
-      await updateProgress(
-        work.workId,
-        work.currentChapters,
-        globalIndex
-      ).catch(() => {});
+      await updateProgress(work.workId, work.currentChapters, globalIndex).catch(() => {});
     }
     router.back();
   }, [work, currentParagraph, chapterStartIndex]);
 
-  const progress =
-    paragraphs.length > 0 ? currentParagraph / (paragraphs.length - 1) : 0;
-
+  const progress = paragraphs.length > 1 ? currentParagraph / (paragraphs.length - 1) : 0;
   const topPad = Platform.OS === "web" ? Math.max(insets.top, 20) : insets.top;
-
   const bgColor =
     themeId === "botanical"
       ? "#fffdf4"
       : themeId === "lofi"
-      ? "#1a0c06"
-      : themeId === "origami"
-      ? "#fafaf8"
-      : colors.background;
-
+        ? "#1a0c06"
+        : themeId === "origami"
+          ? "#fafaf8"
+          : colors.background;
   const textColor =
     themeId === "botanical"
       ? "#2d1f0a"
       : themeId === "lofi"
-      ? "#f0ddb5"
-      : themeId === "origami"
-      ? "#2a3050"
-      : colors.foreground;
+        ? "#f0ddb5"
+        : themeId === "origami"
+          ? "#2a3050"
+          : colors.foreground;
 
   if (!work) {
     return (
-      <View style={[styles.centered, { backgroundColor: colors.background }]}>
-        <Text style={[styles.notFound, { color: colors.mutedForeground }]}>
-          Work not found.
-        </Text>
-        <Pressable
-          onPress={() => router.back()}
-          style={[styles.backPill, { backgroundColor: colors.primary }]}
-        >
-          <Text style={[styles.backPillText, { color: colors.primaryForeground }]}>
-            Go Back
-          </Text>
+      <View style={[styles.centered, { backgroundColor: colors.background }]}> 
+        <Text style={[styles.notFound, { color: colors.mutedForeground }]}>Work not found.</Text>
+        <Pressable onPress={() => router.back()} style={[styles.backPill, { backgroundColor: colors.primary }]}>
+          <Text style={[styles.backPillText, { color: colors.primaryForeground }]}>Go Back</Text>
         </Pressable>
       </View>
     );
   }
 
   return (
-    <View style={[styles.root, { backgroundColor: bgColor }]}>
-      {/* Header */}
+    <View style={[styles.root, { backgroundColor: bgColor }]}> 
       <View
         style={[
           styles.header,
@@ -214,22 +187,14 @@ export default function ReaderScreen() {
           <Text style={[styles.backArrow, { color: colors.primary }]}>←</Text>
           <Text style={[styles.backLabel, { color: colors.primary }]}>Library</Text>
         </Pressable>
-        <Text
-          style={[styles.chapterLabel, { color: colors.mutedForeground }]}
-          numberOfLines={1}
-        >
+        <Text style={[styles.chapterLabel, { color: colors.mutedForeground }]} numberOfLines={1}>
           Ch.{chapterNum}/{work.totalChapters}
         </Text>
-        <Pressable
-          onPress={() => setShowControls((s) => !s)}
-          hitSlop={12}
-          style={styles.settingsButton}
-        >
+        <Pressable onPress={() => setShowControls((s) => !s)} hitSlop={12} style={styles.settingsButton}>
           <Text style={[styles.settingsIcon, { color: colors.primary }]}>Aa</Text>
         </Pressable>
       </View>
 
-      {/* Reading area */}
       <ScrollView
         ref={scrollRef}
         style={styles.scroll}
@@ -238,201 +203,71 @@ export default function ReaderScreen() {
         scrollEventThrottle={150}
         showsVerticalScrollIndicator={false}
       >
-        {/* Chapter header */}
         <View style={styles.chapterHeader}>
-          <Text
-            style={[styles.workTitle, { color: textColor, fontSize: fontSize + 4 }]}
-          >
-            {work.title}
-          </Text>
-          <Text style={[styles.authorLabel, { color: colors.mutedForeground }]}>
-            by {work.author}
-          </Text>
-          <View
-            style={[styles.headerDivider, { backgroundColor: colors.border }]}
-          />
-          <Text style={[styles.chapterHeading, { color: colors.primary }]}>
-            Chapter {chapterNum}
-          </Text>
+          <Text style={[styles.workTitle, { color: textColor, fontSize: fontSize + 4 }]}>{work.title}</Text>
+          <Text style={[styles.authorLabel, { color: colors.mutedForeground }]}>by {work.author}</Text>
+          <View style={[styles.headerDivider, { backgroundColor: colors.border }]} />
+          <Text style={[styles.chapterHeading, { color: colors.primary }]}>Chapter {chapterNum}</Text>
         </View>
 
-        {/* Paragraphs */}
         {paragraphs.map((para, idx) => (
           <Text
             key={idx}
             style={[
               styles.paragraph,
-              {
-                color: textColor,
-                fontSize,
-                lineHeight,
-                opacity: idx === currentParagraph ? 1 : 0.88,
-              },
+              { color: textColor, fontSize, lineHeight, opacity: idx === currentParagraph ? 1 : 0.88 },
             ]}
           >
             {para}
           </Text>
         ))}
 
-        {/* Chapter end marker */}
-        <View
-          style={[styles.endMarker, { borderColor: colors.border }]}
-        >
+        <View style={[styles.endMarker, { borderColor: colors.border }]}> 
           <View style={[styles.endLine, { backgroundColor: colors.border }]} />
-          <Text style={[styles.endText, { color: colors.mutedForeground }]}>
-            End of Chapter {chapterNum}
-          </Text>
+          <Text style={[styles.endText, { color: colors.mutedForeground }]}>End of Chapter {chapterNum}</Text>
           <View style={[styles.endLine, { backgroundColor: colors.border }]} />
         </View>
       </ScrollView>
 
-      {/* Bottom controls */}
-      <View
-        style={[
-          styles.bottomBar,
-          {
-            paddingBottom: insets.bottom + 4,
-            backgroundColor: bgColor + "f2",
-            borderTopColor: colors.border,
-          },
-        ]}
-      >
-        {/* Reading controls panel */}
+      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 4, backgroundColor: bgColor + "f2", borderTopColor: colors.border }]}> 
         {showControls && (
-          <View
-            style={[
-              styles.controlsPanel,
-              { borderBottomColor: colors.border, backgroundColor: bgColor },
-            ]}
-          >
-            {/* Font size */}
+          <View style={[styles.controlsPanel, { borderBottomColor: colors.border, backgroundColor: bgColor }]}> 
             <View style={styles.controlRow}>
-              <Text style={[styles.controlLabel, { color: colors.mutedForeground }]}>
-                Font size
-              </Text>
+              <Text style={[styles.controlLabel, { color: colors.mutedForeground }]}>Font size</Text>
               <View style={styles.stepper}>
-                <Pressable
-                  onPress={() => setFontSizeIdx((i) => Math.max(0, i - 1))}
-                  style={[styles.stepBtn, { borderColor: colors.border }]}
-                  disabled={fontSizeIdx === 0}
-                >
-                  <Text
-                    style={[
-                      styles.stepBtnText,
-                      { color: fontSizeIdx === 0 ? colors.mutedForeground : colors.foreground },
-                    ]}
-                  >
-                    −
-                  </Text>
+                <Pressable onPress={() => setFontSizeIdx((i) => Math.max(0, i - 1))} style={[styles.stepBtn, { borderColor: colors.border }]} disabled={fontSizeIdx === 0}>
+                  <Text style={[styles.stepBtnText, { color: fontSizeIdx === 0 ? colors.mutedForeground : colors.foreground }]}>−</Text>
                 </Pressable>
-                <Text style={[styles.stepValue, { color: textColor }]}>
-                  {fontSize}px
-                </Text>
-                <Pressable
-                  onPress={() =>
-                    setFontSizeIdx((i) => Math.min(FONT_SIZES.length - 1, i + 1))
-                  }
-                  style={[styles.stepBtn, { borderColor: colors.border }]}
-                  disabled={fontSizeIdx === FONT_SIZES.length - 1}
-                >
-                  <Text
-                    style={[
-                      styles.stepBtnText,
-                      {
-                        color:
-                          fontSizeIdx === FONT_SIZES.length - 1
-                            ? colors.mutedForeground
-                            : colors.foreground,
-                      },
-                    ]}
-                  >
-                    +
-                  </Text>
+                <Text style={[styles.stepValue, { color: textColor }]}>{fontSize}px</Text>
+                <Pressable onPress={() => setFontSizeIdx((i) => Math.min(FONT_SIZES.length - 1, i + 1))} style={[styles.stepBtn, { borderColor: colors.border }]} disabled={fontSizeIdx === FONT_SIZES.length - 1}>
+                  <Text style={[styles.stepBtnText, { color: fontSizeIdx === FONT_SIZES.length - 1 ? colors.mutedForeground : colors.foreground }]}>+</Text>
                 </Pressable>
               </View>
             </View>
-
-            {/* Line spacing */}
             <View style={styles.controlRow}>
-              <Text style={[styles.controlLabel, { color: colors.mutedForeground }]}>
-                Line spacing
-              </Text>
+              <Text style={[styles.controlLabel, { color: colors.mutedForeground }]}>Line spacing</Text>
               <View style={styles.stepper}>
-                <Pressable
-                  onPress={() => setLineSpacingIdx((i) => Math.max(0, i - 1))}
-                  style={[styles.stepBtn, { borderColor: colors.border }]}
-                  disabled={lineSpacingIdx === 0}
-                >
-                  <Text
-                    style={[
-                      styles.stepBtnText,
-                      {
-                        color:
-                          lineSpacingIdx === 0
-                            ? colors.mutedForeground
-                            : colors.foreground,
-                      },
-                    ]}
-                  >
-                    −
-                  </Text>
+                <Pressable onPress={() => setLineSpacingIdx((i) => Math.max(0, i - 1))} style={[styles.stepBtn, { borderColor: colors.border }]} disabled={lineSpacingIdx === 0}>
+                  <Text style={[styles.stepBtnText, { color: lineSpacingIdx === 0 ? colors.mutedForeground : colors.foreground }]}>−</Text>
                 </Pressable>
-                <Text style={[styles.stepValue, { color: textColor }]}>
-                  {lineSpacing.toFixed(1)}×
-                </Text>
-                <Pressable
-                  onPress={() =>
-                    setLineSpacingIdx((i) =>
-                      Math.min(LINE_SPACINGS.length - 1, i + 1)
-                    )
-                  }
-                  style={[styles.stepBtn, { borderColor: colors.border }]}
-                  disabled={lineSpacingIdx === LINE_SPACINGS.length - 1}
-                >
-                  <Text
-                    style={[
-                      styles.stepBtnText,
-                      {
-                        color:
-                          lineSpacingIdx === LINE_SPACINGS.length - 1
-                            ? colors.mutedForeground
-                            : colors.foreground,
-                      },
-                    ]}
-                  >
-                    +
-                  </Text>
+                <Text style={[styles.stepValue, { color: textColor }]}>{lineSpacing.toFixed(1)}×</Text>
+                <Pressable onPress={() => setLineSpacingIdx((i) => Math.min(LINE_SPACINGS.length - 1, i + 1))} style={[styles.stepBtn, { borderColor: colors.border }]} disabled={lineSpacingIdx === LINE_SPACINGS.length - 1}>
+                  <Text style={[styles.stepBtnText, { color: lineSpacingIdx === LINE_SPACINGS.length - 1 ? colors.mutedForeground : colors.foreground }]}>+</Text>
                 </Pressable>
               </View>
             </View>
           </View>
         )}
 
-        {/* Progress bar */}
-        <View style={[styles.progressTrack, { backgroundColor: colors.border }]}>
-          <View
-            style={[
-              styles.progressFill,
-              {
-                width: `${Math.round(progress * 100)}%`,
-                backgroundColor: colors.primary,
-              },
-            ]}
-          />
+        <View style={[styles.progressTrack, { backgroundColor: colors.border }]}> 
+          <View style={[styles.progressFill, { width: `${Math.round(progress * 100)}%`, backgroundColor: colors.primary }]} />
         </View>
 
-        {/* Info row */}
         <View style={styles.infoRow}>
-          <Text style={[styles.progressText, { color: colors.mutedForeground }]}>
-            {Math.round(progress * 100)}% — para {currentParagraph + 1}
-          </Text>
-          <Text style={[styles.fandomTag, { color: colors.mutedForeground }]}>
-            {work.shelves[0] ?? "Original Fiction"}
-          </Text>
+          <Text style={[styles.progressText, { color: colors.mutedForeground }]}>{Math.round(progress * 100)}% — para {currentParagraph + 1}</Text>
+          <Text style={[styles.fandomTag, { color: colors.mutedForeground }]}>{work.shelves[0] ?? "Original Fiction"}</Text>
           <Pressable onPress={() => setShowControls((s) => !s)} hitSlop={8}>
-            <Text style={[styles.controlToggle, { color: colors.primary }]}>
-              {showControls ? "✕" : "Aa"}
-            </Text>
+            <Text style={[styles.controlToggle, { color: colors.primary }]}>{showControls ? "✕" : "Aa"}</Text>
           </Pressable>
         </View>
       </View>
@@ -442,148 +277,40 @@ export default function ReaderScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  centered: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 16,
-  },
+  centered: { flex: 1, alignItems: "center", justifyContent: "center", gap: 16 },
   notFound: { fontSize: 16, fontWeight: "500" },
-  backPill: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-  },
+  backPill: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20 },
   backPillText: { fontSize: 14, fontWeight: "700" },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingBottom: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    gap: 12,
-  },
-  backButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
+  header: { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingBottom: 10, borderBottomWidth: StyleSheet.hairlineWidth, gap: 12 },
+  backButton: { flexDirection: "row", alignItems: "center", gap: 4 },
   backArrow: { fontSize: 20, fontWeight: "300" },
   backLabel: { fontSize: 15, fontWeight: "600" },
-  chapterLabel: {
-    flex: 1,
-    textAlign: "center",
-    fontSize: 13,
-    fontWeight: "500",
-  },
+  chapterLabel: { flex: 1, textAlign: "center", fontSize: 13, fontWeight: "500" },
   settingsButton: { paddingHorizontal: 4 },
   settingsIcon: { fontSize: 15, fontWeight: "700" },
   scroll: { flex: 1 },
-  content: {
-    paddingHorizontal: 22,
-    paddingTop: 28,
-  },
-  chapterHeader: {
-    marginBottom: 32,
-    alignItems: "center",
-  },
-  workTitle: {
-    fontWeight: "800",
-    letterSpacing: 0.5,
-    textAlign: "center",
-    marginBottom: 6,
-  },
-  authorLabel: {
-    fontSize: 13,
-    fontWeight: "500",
-    fontStyle: "italic",
-    marginBottom: 20,
-  },
-  headerDivider: {
-    height: 1,
-    width: 60,
-    marginBottom: 16,
-  },
-  chapterHeading: {
-    fontSize: 14,
-    fontWeight: "700",
-    letterSpacing: 1.5,
-    textTransform: "uppercase",
-  },
-  paragraph: {
-    marginBottom: 22,
-    textAlign: "justify",
-    fontWeight: "400",
-  },
-  endMarker: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    marginTop: 16,
-    marginBottom: 8,
-  },
+  content: { paddingHorizontal: 22, paddingTop: 28 },
+  chapterHeader: { marginBottom: 32, alignItems: "center" },
+  workTitle: { fontWeight: "800", letterSpacing: 0.5, textAlign: "center", marginBottom: 6 },
+  authorLabel: { fontSize: 13, fontWeight: "500", fontStyle: "italic", marginBottom: 20 },
+  headerDivider: { height: 1, width: 60, marginBottom: 16 },
+  chapterHeading: { fontSize: 14, fontWeight: "700", letterSpacing: 1.5, textTransform: "uppercase" },
+  paragraph: { marginBottom: 22, textAlign: "justify", fontWeight: "400" },
+  endMarker: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 8, marginBottom: 20, borderWidth: 1, borderRadius: 16, padding: 12 },
   endLine: { flex: 1, height: 1 },
-  endText: {
-    fontSize: 11,
-    fontWeight: "600",
-    letterSpacing: 1.2,
-    textTransform: "uppercase",
-  },
-  bottomBar: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-  },
-  controlsPanel: {
-    paddingHorizontal: 20,
-    paddingTop: 14,
-    paddingBottom: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    gap: 12,
-  },
-  controlRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  controlLabel: {
-    fontSize: 13,
-    fontWeight: "500",
-  },
-  stepper: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  stepBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  stepBtnText: { fontSize: 18, fontWeight: "400", lineHeight: 22 },
-  stepValue: {
-    fontSize: 14,
-    fontWeight: "600",
-    minWidth: 44,
-    textAlign: "center",
-  },
-  progressTrack: {
-    height: 3,
-    marginHorizontal: 0,
-  },
-  progressFill: {
-    height: "100%",
-  },
-  infoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 4,
-  },
-  progressText: { fontSize: 11, fontWeight: "500" },
-  fandomTag: { fontSize: 11, fontWeight: "500", fontStyle: "italic" },
-  controlToggle: { fontSize: 13, fontWeight: "700" },
+  endText: { fontSize: 12, fontWeight: "700", letterSpacing: 1 },
+  bottomBar: { borderTopWidth: StyleSheet.hairlineWidth, paddingHorizontal: 16, paddingTop: 12, gap: 10 },
+  controlsPanel: { borderBottomWidth: StyleSheet.hairlineWidth, paddingBottom: 12, gap: 12 },
+  controlRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  controlLabel: { fontSize: 13, fontWeight: "600" },
+  stepper: { flexDirection: "row", alignItems: "center", gap: 10 },
+  stepBtn: { width: 32, height: 32, alignItems: "center", justifyContent: "center", borderRadius: 10, borderWidth: 1 },
+  stepBtnText: { fontSize: 18, fontWeight: "700" },
+  stepValue: { minWidth: 52, textAlign: "center", fontSize: 13, fontWeight: "700" },
+  progressTrack: { height: 4, borderRadius: 999, overflow: "hidden" },
+  progressFill: { height: "100%" },
+  infoRow: { flexDirection: "row", alignItems: "center", gap: 10, justifyContent: "space-between" },
+  progressText: { fontSize: 12, fontWeight: "600" },
+  fandomTag: { flex: 1, fontSize: 12, fontWeight: "600", textAlign: "center" },
+  controlToggle: { fontSize: 15, fontWeight: "700" },
 });

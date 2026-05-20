@@ -1,13 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 
-import {
-  getAllWorks,
-  initDatabase,
-  markReviewed,
-  updateWorkStatus,
-  Work,
-} from "@/lib/database";
+import { getAllWorks, initDatabase, markReviewed, updateWorkStatus, Work } from "@/lib/database";
 import { computeDashboard, DashboardData } from "@/lib/nexusEngine";
+import { syncFicHubWork } from "@/lib/fichubSync";
 
 export interface UseLibraryReturn {
   works: Work[];
@@ -30,8 +25,10 @@ export function useLibrary(): UseLibraryReturn {
       setError(null);
       await initDatabase();
       const all = await getAllWorks();
-      setWorks(all);
-      setDashboard(computeDashboard(all));
+      const synced = await Promise.all(all.map((work) => syncFicHubWork(work).catch(() => null)));
+      const nextWorks = all.map((work) => synced.find((item) => item?.workId === work.workId) ?? work);
+      setWorks(nextWorks);
+      setDashboard(computeDashboard(nextWorks));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load library");
     } finally {
@@ -43,21 +40,15 @@ export function useLibrary(): UseLibraryReturn {
     refresh();
   }, [refresh]);
 
-  const markWorkReviewed = useCallback(
-    async (workId: string) => {
-      await markReviewed(workId);
-      await refresh();
-    },
-    [refresh]
-  );
+  const markWorkReviewed = useCallback(async (workId: string) => {
+    await markReviewed(workId);
+    await refresh();
+  }, [refresh]);
 
-  const updateStatus = useCallback(
-    async (workId: string, status: Work["status"]) => {
-      await updateWorkStatus(workId, status);
-      await refresh();
-    },
-    [refresh]
-  );
+  const updateStatus = useCallback(async (workId: string, status: Work["status"]) => {
+    await updateWorkStatus(workId, status);
+    await refresh();
+  }, [refresh]);
 
   return { works, dashboard, loading, error, refresh, markWorkReviewed, updateStatus };
 }
