@@ -7,7 +7,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 
-import { ThemeId } from "@/constants/themes";
+import { ThemeId, THEME_META } from "@/constants/themes";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useColors } from "@/hooks/useColors";
 
@@ -20,17 +20,6 @@ const THEME_ICONS: Record<ThemeId, string> = {
   origami: "✂",
   viking: "⛵",
   lavender: "✧",
-};
-
-const THEME_SHORT: Record<ThemeId, string> = {
-  default: "Dark",
-  botanical: "Botanical",
-  cloudscape: "Cloudscape",
-  shire: "Shire",
-  blush: "Blush",
-  origami: "Origami",
-  viking: "Viking",
-  lavender: "Lavender",
 };
 
 export function ThemeCycler() {
@@ -54,6 +43,8 @@ export function ThemeCycler() {
     cycleTheme();
   }
 
+  const themeLabel = THEME_META[themeId]?.label ?? "Theme";
+
   return (
     <Animated.View style={animStyle}>
       <Pressable
@@ -66,12 +57,8 @@ export function ThemeCycler() {
           },
         ]}
       >
-        <Text style={[styles.icon, { color: colors.primary }]}>
-          {THEME_ICONS[themeId]}
-        </Text>
-        <Text style={[styles.label, { color: colors.primary }]}>
-          {THEME_SHORT[themeId]}
-        </Text>
+        <Text style={[styles.icon, { color: colors.primary }]}>{THEME_ICONS[themeId]}</Text>
+        <Text style={[styles.label, { color: colors.primary }]}>{themeLabel}</Text>
       </Pressable>
     </Animated.View>
   );

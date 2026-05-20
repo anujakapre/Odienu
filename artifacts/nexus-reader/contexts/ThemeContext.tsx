@@ -3,7 +3,6 @@ import React, {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useState,
 } from "react";
 
@@ -23,31 +22,39 @@ const ThemeContext = createContext<ThemeContextValue>({
 
 const STORAGE_KEY = "nexus_reader_theme";
 
+function resolveThemeId(value: string | null): ThemeId {
+  if (!value) return "default";
+  return THEME_ORDER.includes(value as ThemeId) ? (value as ThemeId) : "default";
+}
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [themeId, setThemeId] = useState<ThemeId>("default");
 
-  useEffect(() => {
+  if (themeId === "default") {
     AsyncStorage.getItem(STORAGE_KEY)
       .then((saved) => {
-        if (saved && THEME_ORDER.includes(saved as ThemeId)) {
-          setThemeId(saved as ThemeId);
+        const next = resolveThemeId(saved);
+        if (next !== themeId) {
+          setThemeId(next);
         }
       })
       .catch(() => {});
-  }, []);
+  }
 
   const cycleTheme = useCallback(() => {
     setThemeId((prev) => {
-      const idx = THEME_ORDER.indexOf(prev);
-      const next = THEME_ORDER[(idx + 1) % THEME_ORDER.length];
+      const currentIndex = THEME_ORDER.indexOf(prev);
+      const safeIndex = currentIndex >= 0 ? currentIndex : 0;
+      const next = THEME_ORDER[(safeIndex + 1) % THEME_ORDER.length] ?? "default";
       AsyncStorage.setItem(STORAGE_KEY, next).catch(() => {});
       return next;
     });
   }, []);
 
   const setTheme = useCallback((id: ThemeId) => {
-    setThemeId(id);
-    AsyncStorage.setItem(STORAGE_KEY, id).catch(() => {});
+    const next = THEME_ORDER.includes(id) ? id : "default";
+    setThemeId(next);
+    AsyncStorage.setItem(STORAGE_KEY, next).catch(() => {});
   }, []);
 
   return (

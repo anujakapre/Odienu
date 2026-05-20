@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import * as DocumentPicker from "expo-document-picker";
+import React, { useMemo, useState } from "react";
 import {
   Modal,
   Pressable,
@@ -25,11 +26,38 @@ export function OnboardingWizard({
   const colors = useColors();
   const [folder, setFolder] = useState(SUGGESTED_FOLDERS[0]);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const helperText = useMemo(() => {
+    if (folder.startsWith("file://")) return "Selected local file or folder URI";
+    if (folder.startsWith("content://")) return "Selected Android document URI";
+    return "Pick a folder path or select a storage location below.";
+  }, [folder]);
+
+  async function pickStorageLocation() {
+    setError(null);
+    const result = await DocumentPicker.getDocumentAsync({
+      type: "*/*",
+      multiple: false,
+      copyToCacheDirectory: false,
+    });
+    if (result.canceled) return;
+    const uri = result.assets[0]?.uri;
+    if (!uri) {
+      setError("Could not read the selected location.");
+      return;
+    }
+    const nextFolder = uri.startsWith("file://") ? uri.replace(/\/[^/]*$/, "") : uri;
+    setFolder(nextFolder);
+  }
 
   async function handleContinue() {
     setSaving(true);
+    setError(null);
     try {
       await onComplete(folder.trim());
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not save folder.");
     } finally {
       setSaving(false);
     }
@@ -46,7 +74,7 @@ export function OnboardingWizard({
         >
           <View style={styles.grabber} />
           <Text style={[styles.title, { color: colors.foreground }]}>Choose storage location</Text>
-          <Text style={[styles.body, { color: colors.mutedForeground }]}>Pick a folder path for downloaded works.</Text>
+          <Text style={[styles.body, { color: colors.mutedForeground }]}>{helperText}</Text>
 
           <TextInput
             value={folder}
@@ -81,6 +109,15 @@ export function OnboardingWizard({
 
           <View style={styles.actionsRow}>
             <Pressable
+              onPress={pickStorageLocation}
+              style={[
+                styles.secondaryButton,
+                { borderColor: colors.border, backgroundColor: colors.background },
+              ]}
+            >
+              <Text style={[styles.secondaryButtonText, { color: colors.primary }]}>Pick location</Text>
+            </Pressable>
+            <Pressable
               onPress={handleContinue}
               disabled={saving || folder.trim().length === 0}
               style={[
@@ -95,6 +132,8 @@ export function OnboardingWizard({
               </Text>
             </Pressable>
           </View>
+
+          {error ? <Text style={[styles.errorText, { color: colors.destructive }]}>{error}</Text> : null}
         </View>
       </View>
     </Modal>
@@ -161,10 +200,23 @@ const styles = StyleSheet.create({
   actionsRow: {
     marginTop: 4,
     flexDirection: "row",
-    justifyContent: "flex-end",
+    justifyContent: "space-between",
+    gap: 10,
+  },
+  secondaryButton: {
+    flex: 1,
+    borderRadius: 16,
+    paddingVertical: 13,
+    paddingHorizontal: 18,
+    alignItems: "center",
+    borderWidth: 1,
+  },
+  secondaryButtonText: {
+    fontSize: 15,
+    fontWeight: "700",
   },
   primaryButton: {
-    minWidth: 120,
+    flex: 1,
     borderRadius: 16,
     paddingVertical: 13,
     paddingHorizontal: 18,
@@ -173,5 +225,9 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     fontSize: 15,
     fontWeight: "700",
+  },
+  errorText: {
+    fontSize: 13,
+    textAlign: "center",
   },
 });
