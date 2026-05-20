@@ -3,7 +3,7 @@ import { FlatList, StyleSheet, Text, View } from "react-native";
 import Svg, { Circle, Line, Rect } from "react-native-svg";
 
 import { BookCard } from "@/components/BookCard";
-import { ShelfFlowerAccent } from "@/components/decorations/BotanicalDecorations";
+// import { ShelfFlowerAccent } from "@/components/decorations/BotanicalDecorations";
 import { EmptyLane } from "@/components/EmptyLane";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useColors } from "@/hooks/useColors";
@@ -101,7 +101,7 @@ export function ShelfLane({
           ]}
         />
       )}
-      {showShelfBar && (themeId === "botanical" || themeId === "lofi") && (
+      {showShelfBar && (themeId === "botanical" || themeId === "shire") && (
         <View
           style={[styles.shelfBar, { backgroundColor: colors.shelfColor }]}
         >
@@ -111,7 +111,7 @@ export function ShelfLane({
               { backgroundColor: colors.shelfHighlight + "60" },
             ]}
           />
-          {themeId === "lofi" && (
+          {themeId === "cloudscape" && (
             <View style={styles.shelfBrackets}>
               <MetalBracket side="left" />
               <View style={{ flex: 1 }} />
@@ -120,7 +120,7 @@ export function ShelfLane({
           )}
           {themeId === "botanical" && (
             <View style={styles.shelfFlowers}>
-              <ShelfFlowerAccent />
+              {/* <ShelfFlowerAccent /> */}
             </View>
           )}
         </View>

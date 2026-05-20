@@ -37,9 +37,7 @@ export default function LibraryScreen() {
         query.trim() === "" ||
         w.title.toLowerCase().includes(query.toLowerCase()) ||
         w.author.toLowerCase().includes(query.toLowerCase()) ||
-        w.shelves.some((s) =>
-          s.toLowerCase().includes(query.toLowerCase())
-        );
+        w.shelves.some((s) => s.toLowerCase().includes(query.toLowerCase()));
       return matchesStatus && matchesQuery;
     });
   }, [works, query, filter]);
@@ -52,7 +50,7 @@ export default function LibraryScreen() {
           { backgroundColor: colors.background, paddingTop: topPad },
         ]}
       >
-        <ActivityIndicator color={colors.primary} />
+        <ActivityIndicator color={colors.primary} size="large" />
       </View>
     );
   }
@@ -94,10 +92,8 @@ export default function LibraryScreen() {
               style={[
                 styles.filterChip,
                 {
-                  backgroundColor:
-                    filter === f ? colors.primary : colors.muted,
-                  borderColor:
-                    filter === f ? colors.primary : colors.border,
+                  backgroundColor: filter === f ? colors.primary : colors.muted,
+                  borderColor: filter === f ? colors.primary : colors.border,
                 },
               ]}
             >
@@ -106,7 +102,9 @@ export default function LibraryScreen() {
                   styles.filterChipText,
                   {
                     color:
-                      filter === f ? colors.primaryForeground : colors.mutedForeground,
+                      filter === f
+                        ? colors.primaryForeground
+                        : colors.mutedForeground,
                   },
                 ]}
               >
@@ -118,18 +116,17 @@ export default function LibraryScreen() {
       </View>
 
       <FlatList
+        key={`grid-2`} // <-- CRITICAL FIX 1: Forces React Native to securely keep a stable 2-column rendering context
         data={filtered}
         keyExtractor={(item) => item.workId}
         numColumns={2}
         contentContainerStyle={[
           styles.grid,
           {
-            paddingBottom:
-              insets.bottom + (Platform.OS === "web" ? 34 : 90),
+            paddingBottom: insets.bottom + (Platform.OS === "web" ? 34 : 90),
           },
         ]}
-        columnWrapperStyle={styles.row}
-        scrollEnabled={!!filtered.length}
+        columnWrapperStyle={filtered.length > 0 ? styles.row : undefined} // <-- CRITICAL FIX 2: Prevents layout crashes when the dataset is completely empty
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.emptyState}>
@@ -142,12 +139,10 @@ export default function LibraryScreen() {
           </View>
         }
         renderItem={({ item }) => (
-          <View style={styles.gridItem}>
-            <BookCard
-              work={item}
-              onPress={(w) => router.push(`/reader/${w.workId}`)}
-            />
-          </View>
+          <BookCard
+            work={item}
+            onPress={(w) => router.push(`/reader/${w.workId}`)}
+          />
         )}
       />
     </View>
@@ -201,14 +196,10 @@ const styles = StyleSheet.create({
   },
   grid: {
     padding: 16,
-    gap: 16,
   },
   row: {
-    gap: 16,
-  },
-  gridItem: {
-    flex: 1,
-    alignItems: "center",
+    justifyContent: "space-between", // <-- CRITICAL FIX 3: Clean, pixel-perfect allocation of space across any phone size
+    marginBottom: 16,
   },
   emptyState: {
     paddingTop: 80,

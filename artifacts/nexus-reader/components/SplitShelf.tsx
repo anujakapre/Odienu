@@ -3,7 +3,7 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { BookCard } from "@/components/BookCard";
 import { SeriesCluster } from "@/components/SeriesCluster";
-import { ShelfFlowerAccent } from "@/components/decorations/BotanicalDecorations";
+// import { ShelfFlowerAccent } from "@/components/decorations/BotanicalDecorations";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useColors } from "@/hooks/useColors";
 import { Work } from "@/lib/database";
@@ -177,7 +177,7 @@ export function SplitShelf({ shelf, onPressWork }: SplitShelfProps) {
           )}
           {themeId === "botanical" && (
             <View style={styles.flowerRow}>
-              <ShelfFlowerAccent />
+              {/* <ShelfFlowerAccent /> */}
             </View>
           )}
         </View>

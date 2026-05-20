@@ -247,6 +247,17 @@ export const THEME_COLORS: Record<ThemeId, AppThemeColors> = {
   },
 };
 
+export const THEME_ORDER: ThemeId[] = [
+  "default",
+  "botanical",
+  "cloudscape",
+  "shire",
+  "blush",
+  "origami",
+  "viking",
+  "lavender"
+];
+
 export const THEME_META: Record<ThemeId, { name: string; label: string; isDark: boolean }> = {
   default: { name: "default", label: "Dark Mode", isDark: true },
   botanical: { name: "botanical", label: "Botanical Library", isDark: false },
