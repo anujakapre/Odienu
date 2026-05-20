@@ -7,11 +7,11 @@ export function CloudscapeBackground() {
   return (
     <Svg width={width} height={height} style={StyleSheet.absoluteFill} pointerEvents="none">
       <Rect width={width} height={height} fill="#4A90E2" />
-      {Array.from({ length: 16 }).map((_, i) => (
-        <G key={i} opacity={0.9} transform={`translate(${(i * 73) % (width + 120) - 60}, ${(i * 97) % (height + 80) - 40})`}>
-          <Ellipse cx={22} cy={18} rx={22} ry={14} fill="#ffffff" opacity={0.95} />
-          <Ellipse cx={44} cy={12} rx={18} ry={12} fill="#ffffff" opacity={0.95} />
-          <Ellipse cx={58} cy={20} rx={20} ry={13} fill="#ffffff" opacity={0.95} />
+      {Array.from({ length: 8 }).map((_, i) => (
+        <G key={i} opacity={0.68} transform={`translate(${(i * 135) % (width + 160) - 80}, ${(i * 151) % (height + 110) - 55})`}>
+          <Ellipse cx={22} cy={18} rx={22} ry={14} fill="#ffffff" opacity={0.9} />
+          <Ellipse cx={44} cy={12} rx={18} ry={12} fill="#ffffff" opacity={0.9} />
+          <Ellipse cx={58} cy={20} rx={20} ry={13} fill="#ffffff" opacity={0.9} />
         </G>
       ))}
     </Svg>
@@ -57,8 +57,8 @@ export function CloudLadders() {
 export function CloudStars() {
   return (
     <Svg width={180} height={40} pointerEvents="none">
-      {Array.from({ length: 9 }).map((_, i) => (
-        <G key={i} transform={`translate(${12 + i * 18}, ${18 + (i % 2) * 4})`}>
+      {Array.from({ length: 5 }).map((_, i) => (
+        <G key={i} transform={`translate(${20 + i * 28}, ${18 + (i % 2) * 4})`}>
           <Circle cx={0} cy={0} r={2.3} fill="#fff" />
           <Path d="M 0,-8 L 0,8 M -8,0 L 8,0" stroke="#fff" strokeWidth={1.4} strokeLinecap="round" opacity={0.95} />
         </G>

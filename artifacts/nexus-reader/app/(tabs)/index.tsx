@@ -51,7 +51,7 @@ export default function HomeScreen() {
 
   if (loading) {
     return (
-      <View style={[styles.centered, { backgroundColor: colors.background }]}>
+      <View style={[styles.centered, { backgroundColor: colors.background }]}> 
         <ActivityIndicator size="large" color={colors.primary} />
         <Text style={[styles.loadingText, { color: colors.mutedForeground }]}>Loading Oidenu...</Text>
       </View>
@@ -60,7 +60,7 @@ export default function HomeScreen() {
 
   if (error) {
     return (
-      <View style={[styles.centered, { backgroundColor: colors.background }]}>
+      <View style={[styles.centered, { backgroundColor: colors.background }]}> 
         <Text style={[styles.errorText, { color: colors.destructive }]}>{error}</Text>
       </View>
     );
@@ -78,28 +78,36 @@ export default function HomeScreen() {
       {themeId === "lavender" && <LavenderBackground />}
 
       {themeId === "lofi" && (
-        <View style={[styles.lofiTopLayer, { top: floatingHeaderH, pointerEvents: "none" }]}>
+        <View style={[styles.lofiTopLayer, { top: floatingHeaderH, pointerEvents: "none" }]}> 
           <View style={styles.lampCenter}><PendantLamp /></View>
           <FairyLights />
         </View>
       )}
 
       {themeId === "cloudscape" && (
-        <View style={[styles.topAccent, { top: floatingHeaderH + 8, pointerEvents: "none" }]}>
-          <CloudStars />
-          <CloudscapeBackground />
-        </View>
+        <>
+          <View style={[styles.topAccent, { top: floatingHeaderH + 8, pointerEvents: "none" }]}> 
+            <CloudStars />
+          </View>
+          <View style={[styles.cloudRightAccent, { top: floatingHeaderH + 90, pointerEvents: "none" }]}> 
+            <CloudWhale />
+          </View>
+          <View style={[styles.cloudLaddersAccent, { top: floatingHeaderH + 160, pointerEvents: "none" }]}> 
+            <CloudLadders />
+          </View>
+        </>
       )}
 
       {themeId === "shire" && (
-        <View style={[styles.cornerAccent, { top: floatingHeaderH + 22, pointerEvents: "none" }]}>
+        <View style={[styles.cornerAccent, { top: floatingHeaderH + 22, pointerEvents: "none" }]}> 
           <HobbitDoor />
           <BrassLantern />
+          <ElvenDeer />
         </View>
       )}
 
       {themeId === "blush" && (
-        <View style={[styles.topAccent, { top: floatingHeaderH - 4, pointerEvents: "none" }]}>
+        <View style={[styles.topAccent, { top: floatingHeaderH - 4, pointerEvents: "none" }]}> 
           <FairyLightsBlush />
           <TulipsBlush />
           <KnitBlanket />
@@ -107,14 +115,14 @@ export default function HomeScreen() {
       )}
 
       {themeId === "viking" && (
-        <View style={[styles.cornerAccent, { top: floatingHeaderH + 20, pointerEvents: "none" }]}>
+        <View style={[styles.cornerAccent, { top: floatingHeaderH + 20, pointerEvents: "none" }]}> 
           <ShieldPattern />
           <BabyDragon />
         </View>
       )}
 
       {themeId === "lavender" && (
-        <View style={[styles.cornerAccent, { top: floatingHeaderH + 12, pointerEvents: "none" }]}>
+        <View style={[styles.cornerAccent, { top: floatingHeaderH + 12, pointerEvents: "none" }]}> 
           <AmethystWindow />
           <GhostReader />
         </View>
@@ -171,6 +179,14 @@ export default function HomeScreen() {
             {dashboard.fandomShelves.map((shelf) => (
               <SplitShelf key={shelf.fandomName} shelf={shelf} onPressWork={handlePressWork} />
             ))}
+
+            {themeId === "botanical" && <SleepingCat />}
+            {themeId === "origami" && <PaperCat />}
+            {themeId === "cloudscape" && <CloudWhale />}
+            {themeId === "shire" && <ElvenDeer />}
+            {themeId === "blush" && <TulipsBlush />}
+            {themeId === "viking" && <BabyDragon />}
+            {themeId === "lavender" && <GhostReader />}
           </>
         )}
       </ScrollView>
@@ -194,6 +210,8 @@ const styles = StyleSheet.create({
   sectionDivider: { height: StyleSheet.hairlineWidth, marginBottom: 10 },
   fandomSectionLabel: { fontSize: 12, fontWeight: "700", letterSpacing: 1.2, textTransform: "uppercase" },
   topAccent: { position: "absolute", left: 0, right: 0, alignItems: "center" },
+  cloudRightAccent: { position: "absolute", right: 18, alignItems: "flex-end" },
+  cloudLaddersAccent: { position: "absolute", left: 18, alignItems: "flex-start" },
   cornerAccent: { position: "absolute", right: 12, alignItems: "flex-end", gap: 6 },
   lofiTopLayer: { position: "absolute", left: 0, right: 0, alignItems: "center" },
   lampCenter: { alignItems: "center", marginBottom: 2 },
