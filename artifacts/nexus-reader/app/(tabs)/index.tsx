@@ -13,6 +13,14 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ShelfLane } from "@/components/ShelfLane";
 import { SplitShelf } from "@/components/SplitShelf";
 import { ThemeCycler } from "@/components/ThemeCycler";
+import { BotanicalBackground, PottedPlant, SleepingCat, VineDecoration } from "@/components/decorations/BotanicalDecorations";
+import { BlushBackground, FairyLightsBlush, KnitBlanket, TulipsBlush } from "@/components/decorations/BlushDecorations";
+import { CloudLadders, CloudscapeBackground, CloudStars, CloudWhale } from "@/components/decorations/CloudscapeDecorations";
+import { LavenderBackground, GhostReader, AmethystWindow } from "@/components/decorations/LavenderDecorations";
+import { LoFiBackground, PendantLamp, FairyLights, CoffeeCorner, ButterflySketch } from "@/components/decorations/LoFiDecorations";
+import { ShireBackground, HobbitDoor, BrassLantern, ElvenDeer } from "@/components/decorations/ShireDecorations";
+import { OrigamiBackground, CloudFormation, PaperCat, OrigamiCrane, OrigamiBunny, StepLadder } from "@/components/decorations/OrigamiDecorations";
+import { VikingBackground, BabyDragon, ShieldPattern } from "@/components/decorations/VikingDecorations";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useColors } from "@/hooks/useColors";
 import { router } from "expo-router";
@@ -59,7 +67,59 @@ export default function HomeScreen() {
   }
 
   return (
-    <View style={[styles.root, { backgroundColor: colors.background }]}>
+    <View style={[styles.root, { backgroundColor: colors.background }]}> 
+      {themeId === "botanical" && <BotanicalBackground />}
+      {themeId === "cloudscape" && <CloudscapeBackground />}
+      {themeId === "shire" && <ShireBackground />}
+      {themeId === "blush" && <BlushBackground />}
+      {themeId === "lofi" && <LoFiBackground />}
+      {themeId === "origami" && <OrigamiBackground />}
+      {themeId === "viking" && <VikingBackground />}
+      {themeId === "lavender" && <LavenderBackground />}
+
+      {themeId === "lofi" && (
+        <View style={[styles.lofiTopLayer, { top: floatingHeaderH, pointerEvents: "none" }]}>
+          <View style={styles.lampCenter}><PendantLamp /></View>
+          <FairyLights />
+        </View>
+      )}
+
+      {themeId === "cloudscape" && (
+        <View style={[styles.topAccent, { top: floatingHeaderH + 8, pointerEvents: "none" }]}>
+          <CloudStars />
+          <CloudscapeBackground />
+        </View>
+      )}
+
+      {themeId === "shire" && (
+        <View style={[styles.cornerAccent, { top: floatingHeaderH + 22, pointerEvents: "none" }]}>
+          <HobbitDoor />
+          <BrassLantern />
+        </View>
+      )}
+
+      {themeId === "blush" && (
+        <View style={[styles.topAccent, { top: floatingHeaderH - 4, pointerEvents: "none" }]}>
+          <FairyLightsBlush />
+          <TulipsBlush />
+          <KnitBlanket />
+        </View>
+      )}
+
+      {themeId === "viking" && (
+        <View style={[styles.cornerAccent, { top: floatingHeaderH + 20, pointerEvents: "none" }]}>
+          <ShieldPattern />
+          <BabyDragon />
+        </View>
+      )}
+
+      {themeId === "lavender" && (
+        <View style={[styles.cornerAccent, { top: floatingHeaderH + 12, pointerEvents: "none" }]}>
+          <AmethystWindow />
+          <GhostReader />
+        </View>
+      )}
+
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.scroll, { paddingTop: totalPaddingTop }]}
@@ -79,6 +139,8 @@ export default function HomeScreen() {
           </View>
           <ThemeCycler />
         </View>
+
+        {themeId === "botanical" && <VineDecoration />}
 
         {dashboard && (
           <>
@@ -131,4 +193,8 @@ const styles = StyleSheet.create({
   fandomSection: { marginTop: 18, paddingHorizontal: 20 },
   sectionDivider: { height: StyleSheet.hairlineWidth, marginBottom: 10 },
   fandomSectionLabel: { fontSize: 12, fontWeight: "700", letterSpacing: 1.2, textTransform: "uppercase" },
+  topAccent: { position: "absolute", left: 0, right: 0, alignItems: "center" },
+  cornerAccent: { position: "absolute", right: 12, alignItems: "flex-end", gap: 6 },
+  lofiTopLayer: { position: "absolute", left: 0, right: 0, alignItems: "center" },
+  lampCenter: { alignItems: "center", marginBottom: 2 },
 });
