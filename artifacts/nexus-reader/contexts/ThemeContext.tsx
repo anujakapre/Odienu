@@ -3,6 +3,7 @@ import React, {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useState,
 } from "react";
 
@@ -30,16 +31,16 @@ function resolveThemeId(value: string | null): ThemeId {
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [themeId, setThemeId] = useState<ThemeId>("default");
 
-  if (themeId === "default") {
+  useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY)
       .then((saved) => {
         const next = resolveThemeId(saved);
-        if (next !== themeId) {
+        if (next !== "default") {
           setThemeId(next);
         }
       })
       .catch(() => {});
-  }
+  }, []);
 
   const cycleTheme = useCallback(() => {
     setThemeId((prev) => {

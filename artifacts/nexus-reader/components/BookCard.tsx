@@ -1,4 +1,3 @@
-import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect } from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, {
@@ -194,14 +193,15 @@ export function BookCard({ work, showGlow, onPress, compact }: BookCardProps) {
           }),
         ]}
       >
-        <LinearGradient
-          colors={gradient as [string, string]}
+        <View
           style={[
             styles.cover,
-            { height: coverHeight, borderRadius: colors.radius },
+            {
+              height: coverHeight,
+              borderRadius: colors.radius,
+              backgroundColor: gradient[0],
+            },
           ]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
         >
           <View
             style={[
@@ -228,7 +228,7 @@ export function BookCard({ work, showGlow, onPress, compact }: BookCardProps) {
               </Text>
             </View>
           )}
-        </LinearGradient>
+        </View>
 
         <View style={styles.info}>
           <Text

@@ -1,4 +1,3 @@
-import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
@@ -152,11 +151,11 @@ export function SplitShelf({ shelf, onPressWork }: SplitShelfProps) {
 
       {/* Themed shelf bar */}
       {isThemed && themeId === "origami" && (
-        <LinearGradient
-          colors={[colors.shelfColor, colors.shelfHighlight]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.origamiDivider}
+        <View
+          style={[
+            styles.origamiDivider,
+            { backgroundColor: colors.shelfHighlight },
+          ]}
         />
       )}
       {isThemed && (themeId === "botanical" || themeId === "lofi") && (

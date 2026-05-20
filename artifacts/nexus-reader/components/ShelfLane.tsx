@@ -1,4 +1,3 @@
-import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import { FlatList, StyleSheet, Text, View } from "react-native";
 import Svg, { Circle, Line, Rect } from "react-native-svg";
@@ -95,11 +94,11 @@ export function ShelfLane({
       </View>
 
       {showShelfBar && themeId === "origami" && (
-        <LinearGradient
-          colors={[colors.shelfColor, colors.shelfHighlight]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.shelfBarOrigami}
+        <View
+          style={[
+            styles.shelfBarOrigami,
+            { backgroundColor: colors.shelfHighlight },
+          ]}
         />
       )}
       {showShelfBar && (themeId === "botanical" || themeId === "lofi") && (
