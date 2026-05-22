@@ -2,6 +2,7 @@ import React from "react";
 import {
   ActivityIndicator,
   Platform,
+  Pressable, // Added Pressable for the button interaction
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -145,7 +146,25 @@ export default function HomeScreen() {
             <Text style={[styles.appName, { color: colors.foreground }]}>OIDENU</Text>
             <Text style={[styles.appSub, { color: colors.mutedForeground }]}>Your Oidenu library</Text>
           </View>
-          <ThemeCycler />
+
+          {/* Grouped controls: Theme switcher and Settings side-by-side */}
+          <View style={styles.headerControls}>
+            <ThemeCycler />
+
+            <Pressable 
+              onPress={() => router.push("/settings")}
+              style={({ pressed }) => [
+                styles.settingsButton, 
+                { 
+                  backgroundColor: colors.card, 
+                  borderColor: colors.border 
+                },
+                pressed && { opacity: 0.7 }
+              ]}
+            >
+              <Text style={{ fontSize: 18 }}>⚙️</Text>
+            </Pressable>
+          </View>
         </View>
 
         {themeId === "botanical" && <VineDecoration />}
@@ -203,6 +222,15 @@ const styles = StyleSheet.create({
   heroHeader: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 20, marginBottom: 18 },
   appName: { fontSize: 30, fontWeight: "900", letterSpacing: 1.5 },
   appSub: { marginTop: 4, fontSize: 13 },
+  headerControls: { flexDirection: "row", alignItems: "center", gap: 10 },
+  settingsButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   section: { marginTop: 18 },
   updateHeader: { paddingHorizontal: 20, marginBottom: 10 },
   sectionTitle: { fontSize: 16, fontWeight: "800" },

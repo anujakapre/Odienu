@@ -27,7 +27,17 @@ const queryClient = new QueryClient();
 function RootLayoutNav() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
+      {/* Your main dashboard layouts */}
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+
+      {/* Added Settings screen as a slide-up modal layer */}
+      <Stack.Screen 
+        name="settings" 
+        options={{ 
+          headerShown: false, 
+          presentation: "modal" 
+        }} 
+      />
     </Stack>
   );
 }
@@ -36,6 +46,8 @@ function AppShell() {
   const { config, loading, chooseDownloadFolder } = useAppConfig();
 
   if (loading || !config) return <View style={{ flex: 1 }} />;
+
+  // If no folder is stored yet, lock the user inside our true SAF folder selection prompt
   if (!config.user_download_folder) {
     return <OnboardingWizard onComplete={chooseDownloadFolder} />;
   }

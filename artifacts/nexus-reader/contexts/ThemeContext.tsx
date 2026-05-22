@@ -24,12 +24,12 @@ const ThemeContext = createContext<ThemeContextValue>({
 const STORAGE_KEY = "nexus_reader_theme";
 
 function resolveThemeId(value: string | null): ThemeId {
-  if (!value) return "default";
-  return THEME_ORDER.includes(value as ThemeId) ? (value as ThemeId) : "default";
+  if (!value) return "botanical";
+  return THEME_ORDER.includes(value as ThemeId) ? (value as ThemeId) : "botanical";
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [themeId, setThemeId] = useState<ThemeId>("default");
+  const [themeId, setThemeId] = useState<ThemeId>("botanical");
 
   useEffect(() => {
     let mounted = true;
@@ -40,7 +40,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         const next = resolveThemeId(saved);
         setThemeId(next);
       } catch {
-        if (mounted) setThemeId("default");
+        if (mounted) setThemeId("botanical");
       }
     })();
     return () => {
@@ -59,7 +59,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const setTheme = useCallback((id: ThemeId) => {
-    const next = THEME_ORDER.includes(id) ? id : "default";
+    const next = THEME_ORDER.includes(id) ? id : "botanical";
     setThemeId(next);
     AsyncStorage.setItem(STORAGE_KEY, next).catch(() => {});
   }, []);

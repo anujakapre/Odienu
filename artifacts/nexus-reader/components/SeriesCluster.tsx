@@ -1,6 +1,6 @@
 import React from "react";
 import {
-  FlatList,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -26,7 +26,7 @@ export function SeriesCluster({ cluster, onPressWork }: SeriesClusterProps) {
         {
           backgroundColor: colors.muted,
           borderColor: colors.border,
-          borderRadius: colors.radius,
+          borderRadius: 12, // Swapped colors.radius for standard int if not defined in AppThemeColors
         },
       ]}
     >
@@ -48,15 +48,15 @@ export function SeriesCluster({ cluster, onPressWork }: SeriesClusterProps) {
           </Text>
         </View>
       </View>
-      <FlatList
-        data={cluster.works}
+
+      {/* Replaced FlatList with a standard ScrollView to completely eliminate VirtualizedList nesting errors */}
+      <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        keyExtractor={(item) => item.workId}
         contentContainerStyle={styles.list}
-        scrollEnabled={!!cluster.works.length}
-        renderItem={({ item, index }) => (
-          <View style={styles.itemWrapper}>
+      >
+        {cluster.works.map((item, index) => (
+          <View style={styles.itemWrapper} key={item.workId}>
             <View style={[styles.orderBadge, { backgroundColor: colors.primary }]}>
               <Text style={[styles.orderText, { color: colors.primaryForeground }]}>
                 {index + 1}
@@ -64,8 +64,8 @@ export function SeriesCluster({ cluster, onPressWork }: SeriesClusterProps) {
             </View>
             <BookCard work={item} onPress={onPressWork} compact />
           </View>
-        )}
-      />
+        ))}
+      </ScrollView>
     </View>
   );
 }
