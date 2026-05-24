@@ -1,249 +1,106 @@
-import * as DocumentPicker from "expo-document-picker";
-import * as FileSystem from "expo-file-system/legacy";
-import React, { useMemo, useState } from "react";
-import {
-  Modal,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
+import { useAppConfig } from "@/hooks/useAppConfig";
+import { useTheme } from "@/contexts/ThemeContext";
 
-import { useColors } from "@/hooks/useColors";
+// 1️⃣ Define the props expected by _layout.tsx
+interface OnboardingWizardProps {
+  onComplete: (folder: string) => void;
+}
 
-export function OnboardingWizard({
-  onComplete,
-  onCancel, // Optional close action for when used inside a Settings panel later
-}: {
-  onComplete: (folder: string) => Promise<void>;
-  onCancel?: () => void;
-}) {
-  const colors = useColors();
-  const [folder, setFolder] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+// 🎯 THE FIX: This is the main orchestrator component your _layout.tsx is trying to import!
+export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
+  const [currentStep, setCurrentStep] = useState(0);
+  const { config } = useAppConfig();
 
-  const helperText = useMemo(() => {
-    if (!folder)
-      return "Tap 'Pick location' to select a storage folder from your device.";
-    if (folder.startsWith("file://"))
-      return "Selected local storage directory path";
-    if (folder.startsWith("content://"))
-      return "Authorized Android secure system folder location";
-    return "Target folder locked and ready.";
-  }, [folder]);
-
-  async function pickStorageLocation() {
-    try {
-      // Safely accessing the subsystem via the FileSystem namespace
-      const permissions = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
-
-      if (permissions.granted) {
-        onComplete(permissions.directoryUri);
-      } else {
-        setError("Permission to access the selected directory was denied.");
-      }
-    } catch (err) {
-      setError("An error occurred while opening the system folder picker.");
-      console.error(err);
+  const handleFolderStepComplete = () => {
+    // If we have a folder path saved, finish the wizard completely
+    if (config?.user_download_folder) {
+      onComplete(config.user_download_folder);
+    } else {
+      // If they skipped, pass an empty string or default fallback
+      onComplete?.("");
     }
+  };
+
+  // You can easily add more steps here later (e.g., Profile setting step)
+  if (currentStep === 0) {
+    return <OnboardingFolderStep onNextStep={handleFolderStepComplete} />;
   }
 
-  async function handleContinue() {
-    if (folder.trim().length === 0) return;
-    setSaving(true);
-    setError(null);
-    try {
-      await onComplete(folder.trim());
-    } catch (cause) {
-      setError(
-        cause instanceof Error ? cause.message : "Could not save folder path.",
-      );
-    } finally {
-      setSaving(false);
+  return null;
+}
+
+// 2️⃣ Your step sub-component remains perfectly intact here
+interface StepProps {
+  onNextStep: () => void;
+}
+
+function OnboardingFolderStep({ onNextStep }: StepProps) {
+  const { theme } = useTheme();
+  const colors = theme.colors;
+
+  const { config, isPicking, pickAndSaveDirectory } = useAppConfig();
+
+  const handlePress = async () => {
+    const savedPath = await pickAndSaveDirectory();
+    if (savedPath) {
+      onNextStep();
     }
-  }
+  };
+
+  const formatPathDisplay = (path?: string | null) => {
+    if (!path) return "";
+    if (path.startsWith("content://")) return "Secure System Path (Authorized Tree)";
+    return path;
+  };
 
   return (
-    <Modal transparent visible animationType="fade" statusBarTranslucent>
-      <View style={[styles.overlay, { backgroundColor: "rgba(0,0,0,0.5)" }]}>
-        <View
-          style={[
-            styles.card,
-            { backgroundColor: colors.card, borderColor: colors.border },
-          ]}
-        >
-          <View style={styles.grabber} />
-          <Text style={[styles.title, { color: colors.foreground }]}>
-            Storage Setup
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Text style={[styles.title, { color: colors.foreground }]}>Connect Your Library</Text>
+      <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
+        Select the local folder where you save your fanfiction EPUB downloads.
+      </Text>
+
+      <TouchableOpacity 
+        style={[
+          styles.button, 
+          { backgroundColor: colors.primary },
+          isPicking && styles.disabled
+        ]} 
+        onPress={handlePress}
+        disabled={isPicking}
+      >
+        {isPicking ? (
+          <ActivityIndicator color={colors.primaryForeground || "#FFFFFF"} size="small" />
+        ) : (
+          <Text style={[styles.btnText, { color: colors.primaryForeground || "#FFFFFF" }]}>
+            {config?.user_download_folder ? "Change Staging Folder" : "Select Intake Folder"}
           </Text>
-          <Text style={[styles.body, { color: colors.mutedForeground }]}>
-            {helperText}
-          </Text>
+        )}
+      </TouchableOpacity>
 
-          <TextInput
-            value={folder}
-            onChangeText={setFolder}
-            placeholder="No path selected yet..."
-            placeholderTextColor={colors.mutedForeground}
-            editable={false} // Read-only so users don't break paths with accidental keyboard typos
-            style={[
-              styles.input,
-              {
-                color: colors.foreground,
-                borderColor: colors.border,
-                backgroundColor: colors.background,
-              },
-            ]}
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
+      {config?.user_download_folder && (
+        <Text style={[styles.pathLabel, { color: colors.mutedForeground, borderColor: colors.border, backgroundColor: colors.card }]}>
+          Linked to: {formatPathDisplay(config.user_download_folder)}
+        </Text>
+      )}
 
-          <View style={styles.actionsRow}>
-            <Pressable
-              onPress={pickStorageLocation}
-              style={[
-                styles.secondaryButton,
-                {
-                  borderColor: colors.border,
-                  backgroundColor: colors.background,
-                },
-              ]}
-            >
-              <Text
-                style={[styles.secondaryButtonText, { color: colors.primary }]}
-              >
-                Pick location
-              </Text>
-            </Pressable>
-
-            <Pressable
-              onPress={handleContinue}
-              disabled={saving || folder.trim().length === 0}
-              style={[
-                styles.primaryButton,
-                {
-                  backgroundColor: colors.primary,
-                  opacity: folder.trim().length === 0 ? 0.5 : 1,
-                },
-              ]}
-            >
-              <Text
-                style={[
-                  styles.primaryButtonText,
-                  { color: colors.primaryForeground },
-                ]}
-              >
-                {saving ? "Saving..." : "Lock Folder"}
-              </Text>
-            </Pressable>
-          </View>
-
-          {/* Conditional Close/Cancel Action rendered only when editing from Settings screen context */}
-          {onCancel && (
-            <Pressable onPress={onCancel} style={styles.cancelContainer}>
-              <Text style={[styles.cancelText, { color: colors.destructive }]}>
-                Cancel Changes
-              </Text>
-            </Pressable>
-          )}
-
-          {error ? (
-            <Text style={[styles.errorText, { color: colors.destructive }]}>
-              {error}
-            </Text>
-          ) : null}
-        </View>
-      </View>
-    </Modal>
+      <TouchableOpacity style={styles.skipBtn} onPress={onNextStep}>
+        <Text style={[styles.skipText, { color: colors.mutedForeground }]}>Configure later in settings</Text>
+      </TouchableOpacity>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 24,
-  },
-  card: {
-    width: "100%",
-    borderWidth: 1,
-    borderRadius: 28,
-    padding: 20,
-    gap: 16,
-    shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 8,
-  },
-  grabber: {
-    alignSelf: "center",
-    width: 46,
-    height: 5,
-    borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.15)",
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: "800",
-    textAlign: "center",
-  },
-  body: {
-    fontSize: 14,
-    lineHeight: 20,
-    textAlign: "center",
-    paddingHorizontal: 8,
-  },
-  input: {
-    borderWidth: 1,
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 13,
-    fontSize: 13,
-  },
-  actionsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 10,
-  },
-  secondaryButton: {
-    flex: 1,
-    borderRadius: 16,
-    paddingVertical: 13,
-    paddingHorizontal: 18,
-    alignItems: "center",
-    borderWidth: 1,
-  },
-  secondaryButtonText: {
-    fontSize: 15,
-    fontWeight: "700",
-  },
-  primaryButton: {
-    flex: 1,
-    borderRadius: 16,
-    paddingVertical: 13,
-    paddingHorizontal: 18,
-    alignItems: "center",
-  },
-  primaryButtonText: {
-    fontSize: 15,
-    fontWeight: "700",
-  },
-  cancelContainer: {
-    alignItems: "center",
-    paddingVertical: 4,
-  },
-  cancelText: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  errorText: {
-    fontSize: 13,
-    textAlign: "center",
-    fontWeight: "500",
-  },
+  container: { flex: 1, justifyContent: 'center', padding: 24 },
+  title: { fontSize: 24, fontWeight: '700', marginBottom: 8, textAlign: 'center' },
+  subtitle: { fontSize: 15, textAlign: 'center', marginBottom: 32, lineHeight: 22 },
+  button: { paddingVertical: 16, borderRadius: 14, alignItems: 'center', marginHorizontal: 12, elevation: 1 },
+  disabled: { opacity: 0.6 },
+  btnText: { fontWeight: '700', fontSize: 16 },
+  pathLabel: { marginTop: 16, fontSize: 12, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10, borderWidth: 1, textAlign: 'center', fontFamily: Platform.OS === "ios" ? "Courier" : "monospace" },
+  skipBtn: { marginTop: 28, alignItems: 'center' },
+  skipText: { fontSize: 14, textDecorationLine: 'underline' }
 });

@@ -14,20 +14,21 @@ import {
 import { Picker } from "@react-native-picker/picker";
 import * as Speech from "expo-speech";
 
-import { OnboardingWizard } from "@/components/OnboardingWizard";
+import { useAppConfig } from "@/hooks/useAppConfig"; // 👈 Import our upgraded config engine
 import { ThemeMascot } from "@/components/ThemeMascot";
 import { useTheme } from "@/contexts/ThemeContext";
 import { getTTSSettings, saveTTSSettings, TTSSettingsProfile, VoiceProfile } from "@/lib/ttsSettings";
 
-export function SettingsScreen() {
+export default function SettingsScreen() {
   const { theme } = useTheme();
   const colors = theme.colors;
+
+  // 🔄 Load AppConfig management layer
+  const { config, isPicking, pickAndSaveDirectory } = useAppConfig();
 
   const [loading, setLoading] = useState(true);
   const [username, setUsername] = useState("");
   const [ao3Username, setAo3Username] = useState("");
-  const [folderPath, setFolderPath] = useState("");
-  const [showFolderWizard, setShowFolderWizard] = useState(false);
 
   // Advanced Vocal Processing Engines States
   const [ttsConfig, setTtsConfig] = useState<TTSSettingsProfile | null>(null);
@@ -39,18 +40,14 @@ export function SettingsScreen() {
       try {
         const savedName = await AsyncStorage.getItem("user_profile_name");
         const savedAo3 = await AsyncStorage.getItem("user_ao3_name");
-        const savedFolder = await AsyncStorage.getItem("user_download_folder");
 
         if (savedName) setUsername(savedName);
         if (savedAo3) setAo3Username(savedAo3);
-        if (savedFolder) setFolderPath(savedFolder);
 
-        // Fetch advanced sound settings profile context mapping layers
-        const config = await getTTSSettings();
-        setTtsConfig(config);
+        const ttsSettings = await getTTSSettings();
+        setTtsConfig(ttsSettings);
 
         const voices = await Speech.getAvailableVoicesAsync();
-        // Keep English engine variants available for narrative matching
         setSystemVoices(voices.filter(v => v.language.toLowerCase().startsWith("en")));
       } catch (error) {
         console.error("Failed to load settings configuration.", error);
@@ -86,7 +83,6 @@ export function SettingsScreen() {
     await saveTTSSettings(updatedConfig);
   };
 
-  // 🔊 Audio Sandbox Preview Implementation Routine
   const triggerAudioPreview = async () => {
     if (!ttsConfig) return;
 
@@ -103,7 +99,6 @@ export function SettingsScreen() {
     const voices = await Speech.getAvailableVoicesAsync();
     const getVoiceId = (id: string) => voices.find(v => v.id === id)?.id || voices.find(v => v.language.toLowerCase().startsWith("en-gb"))?.id;
 
-    // Speak narrator line
     Speech.speak(narratorText, {
       voice: getVoiceId(ttsConfig.narrator.voiceIdentifier),
       rate: ttsConfig.narrator.rate,
@@ -111,7 +106,6 @@ export function SettingsScreen() {
       volume: ttsConfig.narrator.volume,
       onDone: () => {
         if (ttsConfig.enableDialogueVoice) {
-          // Speak dialogue line if dialogue profile mapping mode is active
           Speech.speak(dialogueText, {
             voice: getVoiceId(ttsConfig.dialogue.voiceIdentifier),
             rate: ttsConfig.dialogue.rate,
@@ -128,15 +122,9 @@ export function SettingsScreen() {
     });
   };
 
-  const handleUpdateFolder = async (newPath: string) => {
-    setFolderPath(newPath);
-    await AsyncStorage.setItem("user_download_folder", newPath);
-    setShowFolderWizard(false);
-  };
-
-  const formatPathDisplay = (path: string) => {
+  const formatPathDisplay = (path?: string | null) => {
     if (!path) return "No folder linked yet";
-    if (path.startsWith("content://")) return "Secure System Path (Authorized Tree)";
+    if (path.startsWith("content://")) return "Secure System Path (Authorized Target)";
     return path;
   };
 
@@ -176,7 +164,6 @@ export function SettingsScreen() {
         {/* --- SECTION 2: AUDIO SYNTHESIS MANAGEMENT CARD --- */}
         <Text style={[styles.sectionTitle, { color: colors.mutedForeground }]}>Narrator Synthesis Engine</Text>
         <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-
           <View style={styles.inputGroup}>
             <Text style={[styles.label, { color: colors.mutedForeground }]}>ACTIVE VOICE MODEL</Text>
             <View style={[styles.pickerWrapper, { borderColor: colors.border, backgroundColor: colors.background }]}>
@@ -238,7 +225,6 @@ export function SettingsScreen() {
 
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
-          {/* 🔘 Dynamic Audio Sandbox Preview Trigger Toggle */}
           <Pressable onPress={triggerAudioPreview} style={[styles.actionButton, { backgroundColor: isPreviewing ? "#EF4444" : colors.primary + "15", borderColor: isPreviewing ? "#EF4444" : colors.primary }]}>
             <Text style={[styles.actionButtonText, { color: isPreviewing ? "#FFFFFF" : colors.primary }]}>
               {isPreviewing ? "🛑 Stop Sound Test Preview" : "🔊 Live Audio Sandbox Test"}
@@ -283,24 +269,34 @@ export function SettingsScreen() {
           )}
         </View>
 
-        {/* --- SECTION 4: STORAGE --- */}
+        {/* --- SECTION 4: OFFLINE LIBRARY STORAGE --- */}
         <Text style={[styles.sectionTitle, { color: colors.mutedForeground }]}>Offline Library Storage</Text>
         <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Text style={[styles.settingName, { color: colors.foreground }]}>Active Library Location</Text>
+
+          {/* 📁 Automatically references config state from hook mount */}
           <Text style={[styles.pathLabel, { color: colors.mutedForeground, backgroundColor: colors.background, borderColor: colors.border }]} numberOfLines={1}>
-            {formatPathDisplay(folderPath)}
+            {formatPathDisplay(config?.user_download_folder)}
           </Text>
-          <Pressable onPress={() => setShowFolderWizard(true)} style={[styles.actionButton, { backgroundColor: colors.primary + "15", borderColor: colors.primary }]}>
-            <Text style={[styles.actionButtonText, { color: colors.primary }]}>Relocate Storage Folder</Text>
+
+          <Pressable 
+            onPress={pickAndSaveDirectory} 
+            disabled={isPicking}
+            style={[styles.actionButton, { backgroundColor: colors.primary + "15", borderColor: colors.primary }, isPicking && { opacity: 0.5 }]}
+          >
+            {isPicking ? (
+              <ActivityIndicator color={colors.primary} size="small" />
+            ) : (
+              <Text style={[styles.actionButtonText, { color: colors.primary }]}>Relocate Storage Folder</Text>
+            )}
           </Pressable>
         </View>
-
-        {showFolderWizard && <OnboardingWizard onComplete={handleUpdateFolder} onCancel={() => setShowFolderWizard(false)} />}
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
+// Keep your existing styles as defined below...
 const styles = StyleSheet.create({
   container: { flex: 1 },
   scrollContent: { padding: 20, paddingTop: Platform.OS === "ios" ? 60 : 30, paddingBottom: 60 },

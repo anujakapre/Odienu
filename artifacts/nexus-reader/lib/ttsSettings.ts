@@ -1,36 +1,4 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Audio } from 'expo-av';
-import * as Speech from 'expo-speech';
-
-// Configure the background session
-export async function configureAudioSession() {
-  await Audio.setAudioModeAsync({
-    staysActiveInBackground: true,
-    playsInSilentModeIOS: true,
-    interruptionModeAndroid: 1, // INTERRUPTION_MODE_ANDROID_DO_NOT_MIX
-    shouldDuckAndroid: true,
-  });
-}
-
-// Global reference for audio playback
-let sound: Audio.Sound | null = null;
-
-export async function speakChapter(params: { text: string }) {
-  await configureAudioSession();
-
-  // Note: expo-speech generates audio and plays it. 
-  // To keep it backgrounded, we prioritize the Speech API options:
-  Speech.speak(params.text, {
-    rate: 1.5,
-    pitch: 1.0,
-    onDone: () => console.log('Finished'),
-  });
-}
-
-export async function stopSpeaking() {
-  await Speech.stop();
-}
-
 
 export interface VoiceProfile {
   voiceIdentifier: string;

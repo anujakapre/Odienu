@@ -19,8 +19,9 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
-        "backgroundColor": "#0f0e17"
-      }
+        "backgroundColor": "#0f0e17",
+        "permissions": ["WAKE_LOCK"]
+        }
     },
     "web": {
       "favicon": "./assets/images/icon.png"
@@ -33,7 +34,9 @@
         }
       ],
       "expo-font",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-sqlite",
+      "expo-file-system"
     ],
     "experiments": {
       "typedRoutes": true,

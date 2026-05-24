@@ -1,40 +1,34 @@
-import React from "react";
+import React, { useRef } from "react";
 import {
   ActivityIndicator,
   Platform,
-  Pressable, // Added Pressable for the button interaction
+  Pressable,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   Text,
   View,
+  Animated,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { router } from "expo-router";
 
 import { ShelfLane } from "@/components/ShelfLane";
 import { SplitShelf } from "@/components/SplitShelf";
 import { ThemeCycler } from "@/components/ThemeCycler";
-import { BotanicalBackground, PottedPlant, SleepingCat, VineDecoration } from "@/components/decorations/BotanicalDecorations";
-import { BlushBackground, FairyLightsBlush, KnitBlanket, TulipsBlush } from "@/components/decorations/BlushDecorations";
-import { CloudLadders, CloudscapeBackground, CloudStars, CloudWhale } from "@/components/decorations/CloudscapeDecorations";
-import { LavenderBackground, GhostReader, AmethystWindow } from "@/components/decorations/LavenderDecorations";
-import { LoFiBackground, PendantLamp, FairyLights, CoffeeCorner, ButterflySketch } from "@/components/decorations/LoFiDecorations";
-import { ShireBackground, HobbitDoor, BrassLantern, ElvenDeer } from "@/components/decorations/ShireDecorations";
-import { OrigamiBackground, CloudFormation, PaperCat, OrigamiCrane, OrigamiBunny, StepLadder } from "@/components/decorations/OrigamiDecorations";
-import { VikingBackground, BabyDragon, ShieldPattern } from "@/components/decorations/VikingDecorations";
-import { useTheme } from "@/contexts/ThemeContext";
-import { useColors } from "@/hooks/useColors";
-import { router } from "expo-router";
+import { ThemeBackgroundLayer } from "@/components/ThemeDecorations";
 
+import { useTheme } from "@/contexts/ThemeContext";
 import { useLibrary } from "@/hooks/useLibrary";
 import { Work } from "@/lib/database";
 
 export default function HomeScreen() {
-  const colors = useColors();
+  const { theme, themeId } = useTheme();
+  const colors = theme.colors;
   const insets = useSafeAreaInsets();
-  const { themeId } = useTheme();
-  const { dashboard, loading, error, refresh } = useLibrary();
   const [refreshing, setRefreshing] = React.useState(false);
+  const { dashboard, loading, error, refresh, syncLocalFiles } = useLibrary();
+  // Tracks the user's scroll position for the jumping mascot animation
+  const scrollY = useRef(new Animated.Value(0)).current;
 
   const topPad = Platform.OS === "web" ? Math.max(insets.top, 67) : insets.top;
   const floatingHeaderH = topPad + 50;
@@ -62,76 +56,26 @@ export default function HomeScreen() {
   if (error) {
     return (
       <View style={[styles.centered, { backgroundColor: colors.background }]}> 
-        <Text style={[styles.errorText, { color: colors.destructive }]}>{error}</Text>
+        <Text style={[styles.errorText, { color: colors.destructive ?? '#ef4444' }]}>{error}</Text>
       </View>
     );
   }
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}> 
-      {themeId === "botanical" && <BotanicalBackground />}
-      {themeId === "cloudscape" && <CloudscapeBackground />}
-      {themeId === "shire" && <ShireBackground />}
-      {themeId === "blush" && <BlushBackground />}
-      {themeId === "lofi" && <LoFiBackground />}
-      {themeId === "origami" && <OrigamiBackground />}
-      {themeId === "viking" && <VikingBackground />}
-      {themeId === "lavender" && <LavenderBackground />}
 
-      {themeId === "lofi" && (
-        <View style={[styles.lofiTopLayer, { top: floatingHeaderH, pointerEvents: "none" }]}> 
-          <View style={styles.lampCenter}><PendantLamp /></View>
-          <FairyLights />
-        </View>
-      )}
+      {/* 🌸 Universal Crash-Proof Mascot Layer */}
+      <ThemeBackgroundLayer themeId={themeId} colors={colors} scrollY={scrollY} />
 
-      {themeId === "cloudscape" && (
-        <>
-          <View style={[styles.topAccent, { top: floatingHeaderH + 8, pointerEvents: "none" }]}> 
-            <CloudStars />
-          </View>
-          <View style={[styles.cloudRightAccent, { top: floatingHeaderH + 90, pointerEvents: "none" }]}> 
-            <CloudWhale />
-          </View>
-          <View style={[styles.cloudLaddersAccent, { top: floatingHeaderH + 160, pointerEvents: "none" }]}> 
-            <CloudLadders />
-          </View>
-        </>
-      )}
-
-      {themeId === "shire" && (
-        <View style={[styles.cornerAccent, { top: floatingHeaderH + 22, pointerEvents: "none" }]}> 
-          <HobbitDoor />
-          <BrassLantern />
-          <ElvenDeer />
-        </View>
-      )}
-
-      {themeId === "blush" && (
-        <View style={[styles.topAccent, { top: floatingHeaderH - 4, pointerEvents: "none" }]}> 
-          <FairyLightsBlush />
-          <TulipsBlush />
-          <KnitBlanket />
-        </View>
-      )}
-
-      {themeId === "viking" && (
-        <View style={[styles.cornerAccent, { top: floatingHeaderH + 20, pointerEvents: "none" }]}> 
-          <ShieldPattern />
-          <BabyDragon />
-        </View>
-      )}
-
-      {themeId === "lavender" && (
-        <View style={[styles.cornerAccent, { top: floatingHeaderH + 12, pointerEvents: "none" }]}> 
-          <AmethystWindow />
-          <GhostReader />
-        </View>
-      )}
-
-      <ScrollView
+      <Animated.ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.scroll, { paddingTop: totalPaddingTop }]}
+        // Bind the scroll event to our animated tracking value
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: true }
+        )}
+        scrollEventThrottle={16} // Fires smoothly at 60fps
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -147,34 +91,37 @@ export default function HomeScreen() {
             <Text style={[styles.appSub, { color: colors.mutedForeground }]}>Your Oidenu library</Text>
           </View>
 
-          {/* Grouped controls: Theme switcher and Settings side-by-side */}
           <View style={styles.headerControls}>
             <ThemeCycler />
-
             <Pressable 
-              onPress={() => router.push("/settings")}
+              onPress={() => router.push("/(tabs)/settings")}
               style={({ pressed }) => [
                 styles.settingsButton, 
-                { 
-                  backgroundColor: colors.card, 
-                  borderColor: colors.border 
-                },
+                { backgroundColor: colors.card, borderColor: colors.border },
                 pressed && { opacity: 0.7 }
               ]}
             >
               <Text style={{ fontSize: 18 }}>⚙️</Text>
             </Pressable>
+            <Pressable 
+              onPress={async () => {
+                console.log("Syncing...");
+                await syncLocalFiles();
+                console.log("Sync complete!");
+              }}
+              style={[styles.settingsButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+            >
+              <Text style={{ fontSize: 18 }}>🔄</Text>
+            </Pressable>
           </View>
         </View>
-
-        {themeId === "botanical" && <VineDecoration />}
 
         {dashboard && (
           <>
             {dashboard.newUpdates.length > 0 && (
               <View style={styles.section}>
                 <View style={styles.updateHeader}>
-                  <Text style={[styles.sectionTitle, { color: colors.updateGlow }]}>New Updates</Text>
+                  <Text style={[styles.sectionTitle, { color: colors.updateGlow ?? colors.primary }]}>New Updates</Text>
                 </View>
                 <ShelfLane title="" works={dashboard.newUpdates} glowCards onPressWork={handlePressWork} />
               </View>
@@ -198,17 +145,9 @@ export default function HomeScreen() {
             {dashboard.fandomShelves.map((shelf) => (
               <SplitShelf key={shelf.fandomName} shelf={shelf} onPressWork={handlePressWork} />
             ))}
-
-            {themeId === "botanical" && <SleepingCat />}
-            {themeId === "origami" && <PaperCat />}
-            {themeId === "cloudscape" && <CloudWhale />}
-            {themeId === "shire" && <ElvenDeer />}
-            {themeId === "blush" && <TulipsBlush />}
-            {themeId === "viking" && <BabyDragon />}
-            {themeId === "lavender" && <GhostReader />}
           </>
         )}
-      </ScrollView>
+      </Animated.ScrollView>
     </View>
   );
 }
@@ -223,24 +162,11 @@ const styles = StyleSheet.create({
   appName: { fontSize: 30, fontWeight: "900", letterSpacing: 1.5 },
   appSub: { marginTop: 4, fontSize: 13 },
   headerControls: { flexDirection: "row", alignItems: "center", gap: 10 },
-  settingsButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  settingsButton: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, alignItems: "center", justifyContent: "center" },
   section: { marginTop: 18 },
   updateHeader: { paddingHorizontal: 20, marginBottom: 10 },
   sectionTitle: { fontSize: 16, fontWeight: "800" },
   fandomSection: { marginTop: 18, paddingHorizontal: 20 },
   sectionDivider: { height: StyleSheet.hairlineWidth, marginBottom: 10 },
   fandomSectionLabel: { fontSize: 12, fontWeight: "700", letterSpacing: 1.2, textTransform: "uppercase" },
-  topAccent: { position: "absolute", left: 0, right: 0, alignItems: "center" },
-  cloudRightAccent: { position: "absolute", right: 18, alignItems: "flex-end" },
-  cloudLaddersAccent: { position: "absolute", left: 18, alignItems: "flex-start" },
-  cornerAccent: { position: "absolute", right: 12, alignItems: "flex-end", gap: 6 },
-  lofiTopLayer: { position: "absolute", left: 0, right: 0, alignItems: "center" },
-  lampCenter: { alignItems: "center", marginBottom: 2 },
 });

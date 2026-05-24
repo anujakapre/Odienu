@@ -1,410 +1,179 @@
-import React, { useEffect } from "react";
-import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withSequence,
-  withTiming,
-} from "react-native-reanimated";
-import Svg, { Line, Path } from "react-native-svg";
-
+import React from "react";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { useTheme } from "@/contexts/ThemeContext";
-import { useColors } from "@/hooks/useColors";
+import { useLibrary } from "@/hooks/useLibrary";
 import { Work } from "@/lib/database";
-
-const FANDOM_GRADIENTS: Record<string, readonly [string, string]> = {
-  "Harry Potter": ["#4c1d95", "#1e0a3c"],
-  "DC Comics": ["#1e3a8a", "#0a1628"],
-  "Marvel Avengers": ["#7f1d1d", "#3b0a0a"],
-  "Original Fiction": ["#064e3b", "#012118"],
-};
-const FALLBACK_GRADIENTS: readonly [string, string][] = [
-  ["#1e3a5f", "#0a1628"],
-  ["#2d1b69", "#1a0e3d"],
-  ["#065f46", "#012118"],
-  ["#7f1d1d", "#3b0a0a"],
-  ["#1a1f3a", "#0d1020"],
-];
-
-const BOTANICAL_GRADIENTS: Record<string, readonly [string, string]> = {
-  "Harry Potter": ["#6b3fa0", "#3b1f70"],
-  "DC Comics": ["#1e4a8a", "#0a2860"],
-  "Marvel Avengers": ["#8B1a1a", "#5c0f0f"],
-  "Original Fiction": ["#2d6e40", "#0f3020"],
-};
-
-const LOFI_GRADIENTS: Record<string, readonly [string, string]> = {
-  "Harry Potter": ["#4a2870", "#2a1040"],
-  "DC Comics": ["#1a3060", "#0a1830"],
-  "Marvel Avengers": ["#6a1818", "#3a0808"],
-  "Original Fiction": ["#1a4030", "#0a2018"],
-};
-
-const ORIGAMI_GRADIENTS: Record<string, readonly [string, string]> = {
-  "Harry Potter": ["#8060c0", "#5040a0"],
-  "DC Comics": ["#4080c0", "#2060a0"],
-  "Marvel Avengers": ["#c04040", "#a02020"],
-  "Original Fiction": ["#40a080", "#208060"],
-};
-
-function getGradient(
-  shelves: string[],
-  themeId: string
-): readonly [string, string] {
-  const map =
-    themeId === "botanical"
-      ? BOTANICAL_GRADIENTS
-      : themeId === "lofi"
-      ? LOFI_GRADIENTS
-      : themeId === "origami"
-      ? ORIGAMI_GRADIENTS
-      : FANDOM_GRADIENTS;
-
-  for (const shelf of shelves) {
-    if (map[shelf]) return map[shelf];
-  }
-  const hash = shelves
-    .join("")
-    .split("")
-    .reduce((acc, c) => acc + c.charCodeAt(0), 0);
-  return FALLBACK_GRADIENTS[hash % FALLBACK_GRADIENTS.length];
-}
-
-function getPlatformColor(platform: Work["sourcePlatform"]): string {
-  switch (platform) {
-    case "AO3":
-      return "#900000";
-    case "FFN":
-      return "#003366";
-    case "Local Book":
-      return "#065f46";
-  }
-}
-
-function getStatusColor(
-  status: Work["status"],
-  colors: ReturnType<typeof useColors>
-): string {
-  switch (status) {
-    case "Read":
-      return colors.statusRead;
-    case "Currently Reading":
-      return colors.statusReading;
-    case "Unread":
-      return colors.statusUnread;
-  }
-}
-
-const HAND_DRAWN_BORDER: Record<string, string> = {
-  botanical: "#8B6914",
-  lofi: "#e8a857",
-  origami: "#5b9bd5",
-};
 
 interface BookCardProps {
   work: Work;
-  showGlow?: boolean;
-  onPress?: (work: Work) => void;
-  compact?: boolean;
+  onPress: (work: Work) => void;
 }
 
-export function BookCard({ work, showGlow, onPress, compact }: BookCardProps) {
-  const colors = useColors();
-  const { themeId } = useTheme();
-  const glowOpacity = useSharedValue(0);
-  const gradient = getGradient(work.shelves, themeId);
+export function BookCard({ work, onPress }: BookCardProps) {
+  const { theme } = useTheme();
+  const colors = theme.colors;
+  const decorations = theme.decorations;
+  const { toggleWorkFavorite } = useLibrary();
 
-  const cardWidth = compact ? 130 : 155;
-  const cardHeight = compact ? 185 : 220;
-  const coverHeight = cardHeight * 0.48;
+  const isFavorite = !!work.isFavorite; 
 
-  const isThemed = themeId !== "default";
-  const handDrawnColor = HAND_DRAWN_BORDER[themeId] ?? colors.primary;
-
-  useEffect(() => {
-    if (work.needsReview || showGlow) {
-      glowOpacity.value = withRepeat(
-        withSequence(
-          withTiming(1, { duration: 700 }),
-          withTiming(0.25, { duration: 700 })
-        ),
-        -1,
-        true
-      );
-    } else {
-      glowOpacity.value = 0;
+  const handleFavoritePress = async (e: any) => {
+    e.stopPropagation(); 
+    try {
+      await toggleWorkFavorite(work.workId, isFavorite);
+    } catch (err) {
+      console.warn("Failed to update favorite layout indicator:", err);
     }
-  }, [work.needsReview, showGlow]);
-
-  const glowAnimStyle = useAnimatedStyle(() => ({
-    opacity: glowOpacity.value,
-  }));
-
-  const progress =
-    work.totalChapters === "?"
-      ? null
-      : Math.min(1, work.currentChapters / parseInt(work.totalChapters, 10));
+  };
 
   return (
     <Pressable
-      onPress={() => onPress?.(work)}
+      onPress={() => onPress(work)}
       style={({ pressed }) => [
-        styles.container,
-        { width: cardWidth, height: cardHeight, opacity: pressed ? 0.85 : 1 },
+        styles.cardFrame,
+        {
+          backgroundColor: colors.card,
+          borderColor: colors.border,
+        },
+        pressed && styles.cardPressed,
       ]}
     >
-      {(work.needsReview || showGlow) && (
-        <Animated.View
-          style={[
-            styles.glowBorder,
-            {
-              width: cardWidth + 4,
-              height: cardHeight + 4,
-              borderColor: colors.updateGlow,
-            },
-            glowAnimStyle,
-          ]}
-        />
-      )}
-      <View
-        style={[
-          styles.card,
-          {
-            width: cardWidth,
-            height: cardHeight,
-            backgroundColor: colors.card,
-            borderRadius: colors.radius,
-            borderColor: isThemed ? "transparent" : colors.border,
-            borderWidth: isThemed ? 0 : 1,
-          },
-          Platform.select({
-            ios: {
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.22,
-              shadowRadius: 8,
-            },
-            android: { elevation: 6 },
-            web: {
-              boxShadow: "0 4px 12px rgba(0,0,0,0.22)",
-            },
-            default: {},
-          }),
-        ]}
-      >
-        <View
-          style={[
-            styles.cover,
-            {
-              height: coverHeight,
-              borderRadius: colors.radius,
-              backgroundColor: gradient[0],
-            },
-          ]}
-        >
-          <View
-            style={[
-              styles.platformBadge,
-              { backgroundColor: getPlatformColor(work.sourcePlatform) },
-            ]}
-          >
-            <Text style={styles.platformText}>{work.sourcePlatform}</Text>
-          </View>
-          {work.needsReview && (
-            <View
-              style={[
-                styles.newBadge,
-                { backgroundColor: colors.updateGlow },
-              ]}
-            >
-              <Text
-                style={[
-                  styles.newBadgeText,
-                  { color: colors.accentForeground },
-                ]}
-              >
-                NEW
-              </Text>
-            </View>
-          )}
-        </View>
+      {/* Dynamic Cover Asset Rendering Slot - Now 1:1 Aspect Ratio Square */}
+      <View style={[styles.coverWrapper, { backgroundColor: colors.muted }]}>
+        {work.coverUrl ? (
+          <Image source={{ uri: work.coverUrl }} style={styles.coverImage} />
+        ) : (
+          <Text style={[styles.coverFallbackText, { color: colors.mutedForeground }]}>
+            {work.title ? work.title.slice(0, 1).toUpperCase() : "B"}
+          </Text>
+        )}
 
-        <View style={styles.info}>
-          <Text
-            style={[styles.title, { color: colors.cardForeground }]}
-            numberOfLines={2}
-          >
+        {/* 🎀 Whimsical Ornaments Made Significantly Larger and Noticeable */}
+        <Pressable
+          onPress={handleFavoritePress}
+          style={[
+            styles.favoriteBadgeContainer,
+            { 
+              backgroundColor: isFavorite ? "#FFF0F5" : colors.card, 
+              borderColor: isFavorite ? "#FFB6C1" : colors.border 
+            },
+          ]}
+          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+        >
+          <Text style={styles.badgeEmojiIcon}>
+            {isFavorite ? decorations.favoriteIconActive : decorations.favoriteIconInactive}
+          </Text>
+        </Pressable>
+      </View>
+
+      {/* Cleaned Metadata Layout Blocks (Duplicates Pulled Out) */}
+      <View style={styles.metaDataContainer}>
+        <View style={styles.titleRow}>
+          <Text style={[styles.bookTitleText, { color: colors.foreground }]} numberOfLines={2}>
             {work.title}
           </Text>
-          <Text
-            style={[styles.author, { color: colors.mutedForeground }]}
-            numberOfLines={1}
-          >
-            {work.author}
-          </Text>
-
-          <View style={styles.footer}>
-            <View
-              style={[
-                styles.statusDot,
-                { backgroundColor: getStatusColor(work.status, colors) },
-              ]}
-            />
-            <Text
-              style={[styles.chapText, { color: colors.mutedForeground }]}
-            >
-              {work.currentChapters}/{work.totalChapters}
-            </Text>
-          </View>
-
-          {progress !== null && (
-            <View
-              style={[
-                styles.progressBar,
-                { backgroundColor: colors.border },
-              ]}
-            >
-              <View
-                style={[
-                  styles.progressFill,
-                  {
-                    width: `${progress * 100}%`,
-                    backgroundColor:
-                      work.status === "Read"
-                        ? colors.statusRead
-                        : colors.primary,
-                  },
-                ]}
-              />
+          {!!work.isComplete && (
+            <View style={[styles.completeBadge, { backgroundColor: colors.primary + '20', borderColor: colors.primary }]}>
+              <Text style={[styles.completeBadgeText, { color: colors.primary }]}>Done</Text>
             </View>
           )}
         </View>
-
-        {/* Hand-drawn border overlay for themed modes */}
-        {isThemed && (
-          <Svg
-            width={cardWidth}
-            height={cardHeight}
-            style={StyleSheet.absoluteFill}
-            pointerEvents="none"
-          >
-            <Path
-              d={`M 4,3 L ${cardWidth - 5},2 L ${cardWidth - 3},${
-                cardHeight - 4
-              } L 3,${cardHeight - 3} Z`}
-              stroke={handDrawnColor}
-              strokeWidth={2}
-              fill="none"
-              strokeLinejoin="round"
-            />
-            <Line
-              x1={cardWidth - 22}
-              y1={5}
-              x2={cardWidth - 5}
-              y2={22}
-              stroke={handDrawnColor}
-              strokeWidth={1.2}
-              opacity={0.45}
-            />
-            <Line
-              x1={4}
-              y1={cardHeight - 22}
-              x2={22}
-              y2={cardHeight - 4}
-              stroke={handDrawnColor}
-              strokeWidth={1.2}
-              opacity={0.45}
-            />
-          </Svg>
-        )}
+        <Text style={[styles.bookAuthorText, { color: colors.mutedForeground }]} numberOfLines={1}>
+          {work.author}
+        </Text>
       </View>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  cardFrame: {
+    width: "47%", // Leaves an elegant gutter margin gap in your layout grid splits
+    borderWidth: 1,
+    borderRadius: 16,
+    overflow: "visible", // Critical to allow large whimsical ribbons to overlap boundaries!
+    marginBottom: 12,
+    marginHorizontal: "1.5%",
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+  },
+  cardPressed: {
+    opacity: 0.85,
+    transform: [{ scale: 0.98 }],
+  },
+  coverWrapper: {
+    width: "100%",
+    aspectRatio: 1, // 📐 Forces the primary visual frame into a perfect clean square layout
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 12,
-  },
-  glowBorder: {
-    position: "absolute",
-    borderRadius: 14,
-    borderWidth: 2,
-    top: -2,
-    left: -2,
-  },
-  card: {
+    position: "relative",
+    borderTopLeftRadius: 15,
+    borderTopRightRadius: 15,
     overflow: "hidden",
   },
-  cover: {
+  coverImage: {
     width: "100%",
-    justifyContent: "space-between",
-    padding: 8,
-    flexDirection: "row",
-    alignItems: "flex-start",
+    height: "100%",
+    resizeMode: "cover",
   },
-  platformBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
+  coverFallbackText: {
+    fontSize: 42,
+    fontWeight: "900",
+    opacity: 0.75,
   },
-  platformText: {
-    color: "#fff",
-    fontSize: 9,
-    fontWeight: "700",
-    letterSpacing: 0.5,
-  },
-  newBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  newBadgeText: {
-    fontSize: 9,
-    fontWeight: "800",
-    letterSpacing: 1,
-  },
-  info: {
-    flex: 1,
-    padding: 8,
-    justifyContent: "space-between",
-  },
-  title: {
-    fontSize: 12,
-    fontWeight: "700",
-    lineHeight: 16,
-    marginBottom: 2,
-  },
-  author: {
-    fontSize: 10,
-    fontWeight: "500",
-    marginBottom: 4,
-  },
-  footer: {
-    flexDirection: "row",
+  favoriteBadgeContainer: {
+    position: "absolute",
+    top: -4, // Shifts it proudly over the top frame edge layout bounds
+    right: -4,
+    width: 38, // Noticeably larger touch and display surface target
+    height: 38,
+    borderRadius: 19,
+    borderWidth: 1.5,
     alignItems: "center",
+    justifyContent: "center",
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+  badgeEmojiIcon: {
+    fontSize: 20, // Emoji scales up inside the ribbon frame wrapper
+  },
+  metaDataContainer: {
+    padding: 10,
+    gap: 2,
+    justifyContent: "flex-end",
+  },
+  bookTitleText: {
+    fontSize: 13,
+    fontWeight: "800",
+    lineHeight: 16,
+    flex: 1,
+  },
+  bookAuthorText: {
+    fontSize: 11,
+    fontWeight: "600",
+    marginTop: 2,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
     gap: 4,
   },
-  statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+  completeBadge: {
+    paddingHorizontal: 5,
+    paddingVertical: 1.5,
+    borderRadius: 6,
+    borderWidth: 0.5,
   },
-  chapText: {
-    fontSize: 9,
-    fontWeight: "500",
-  },
-  progressBar: {
-    height: 3,
-    borderRadius: 2,
-    marginTop: 4,
-    overflow: "hidden",
-  },
-  progressFill: {
-    height: "100%",
-    borderRadius: 2,
+  completeBadgeText: {
+    fontSize: 8,
+    fontWeight: '800',
+    textTransform: 'uppercase',
   },
 });

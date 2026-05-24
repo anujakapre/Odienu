@@ -4,6 +4,9 @@ export interface Work {
   workId: string;
   title: string;
   author: string;
+  publisher: string | null;
+  storyUuid: string | null;
+  fandom: string | null;
   sourceUrl: string | null;
   sourcePlatform: "AO3" | "FFN" | "Local Book";
   currentChapters: number;
@@ -17,12 +20,25 @@ export interface Work {
   seriesOrder: number;
   lastReadTimestamp: string | null;
   activeParagraphIndex: number;
+  isFavorite: boolean; 
+  isComplete: number; 
+  isFullyParsed: number;   
+}
+
+export interface Chapter {
+  workId: string;
+  chapterNumber: number;
+  title: string;
+  bodyText: string;
 }
 
 interface WorkRow {
   workId: string;
   title: string;
   author: string;
+  publisher: string | null;
+  storyUuid: string | null;
+  fandom: string | null;
   sourceUrl: string | null;
   sourcePlatform: string;
   currentChapters: number;
@@ -36,6 +52,9 @@ interface WorkRow {
   seriesOrder: number;
   lastReadTimestamp: string | null;
   activeParagraphIndex: number;
+  isFavorite: number; 
+  isComplete: number;
+  isFullyParsed: number;
 }
 
 let dbInstance: SQLite.SQLiteDatabase | null = null;
@@ -52,6 +71,9 @@ function parseRow(row: WorkRow): Work {
     workId: row.workId,
     title: row.title,
     author: row.author,
+    publisher: row.publisher ?? "Local Import",
+    storyUuid: row.storyUuid ?? row.workId,
+    fandom: row.fandom ?? "General Fanfiction",
     sourceUrl: row.sourceUrl,
     sourcePlatform: row.sourcePlatform as Work["sourcePlatform"],
     currentChapters: row.currentChapters,
@@ -65,110 +87,24 @@ function parseRow(row: WorkRow): Work {
     seriesOrder: row.seriesOrder,
     lastReadTimestamp: row.lastReadTimestamp,
     activeParagraphIndex: row.activeParagraphIndex,
+    isFavorite: row.isFavorite === 1,
+    isComplete: row.isComplete ?? (row.currentChapters.toString() === row.totalChapters ? 1 : 0),
+    isFullyParsed: row.isFullyParsed,
   };
 }
-
-const SEED_DATA = [
-  {
-    workId: "seed-001",
-    title: "The Prophecy Reversed",
-    author: "ScrivenWitch88",
-    sourceUrl: "https://archiveofourown.org/works/45123456",
-    sourcePlatform: "AO3",
-    currentChapters: 34,
-    totalChapters: "40",
-    lastCommentedChapter: 32,
-    shelves: JSON.stringify(["Harry Potter"]),
-    needsReview: 1,
-    status: "Currently Reading",
-    dateDownloaded: "2026-04-15T10:00:00.000Z",
-    seriesName: null,
-    seriesOrder: 0,
-    lastReadTimestamp: "2026-05-18T22:30:00.000Z",
-    activeParagraphIndex: 847,
-  },
-  {
-    workId: "seed-002",
-    title: "A Dark Knight's Hallow",
-    author: "PortalInk",
-    sourceUrl: "https://archiveofourown.org/works/48901234",
-    sourcePlatform: "AO3",
-    currentChapters: 12,
-    totalChapters: "?",
-    lastCommentedChapter: 11,
-    shelves: JSON.stringify(["Harry Potter", "DC Comics"]),
-    needsReview: 0,
-    status: "Currently Reading",
-    dateDownloaded: "2026-05-01T08:00:00.000Z",
-    seriesName: null,
-    seriesOrder: 0,
-    lastReadTimestamp: "2026-05-17T20:00:00.000Z",
-    activeParagraphIndex: 214,
-  },
-  {
-    workId: "seed-003",
-    title: "Infinity Protocol: Assembled",
-    author: "NovaSterling",
-    sourceUrl: "https://archiveofourown.org/works/39102938",
-    sourcePlatform: "AO3",
-    currentChapters: 28,
-    totalChapters: "28",
-    lastCommentedChapter: 28,
-    shelves: JSON.stringify(["Marvel Avengers"]),
-    needsReview: 0,
-    status: "Read",
-    dateDownloaded: "2026-02-10T14:00:00.000Z",
-    seriesName: "The Infinity Protocol",
-    seriesOrder: 1,
-    lastReadTimestamp: "2026-05-05T19:00:00.000Z",
-    activeParagraphIndex: 0,
-  },
-  {
-    workId: "seed-004",
-    title: "Infinity Protocol: Fractured",
-    author: "NovaSterling",
-    sourceUrl: "https://archiveofourown.org/works/51293847",
-    sourcePlatform: "AO3",
-    currentChapters: 15,
-    totalChapters: "30",
-    lastCommentedChapter: 14,
-    shelves: JSON.stringify(["Marvel Avengers"]),
-    needsReview: 0,
-    status: "Currently Reading",
-    dateDownloaded: "2026-05-10T09:00:00.000Z",
-    seriesName: "The Infinity Protocol",
-    seriesOrder: 2,
-    lastReadTimestamp: "2026-05-19T21:00:00.000Z",
-    activeParagraphIndex: 390,
-  },
-  {
-    workId: "seed-005",
-    title: "Infinity Protocol: Reckoning",
-    author: "NovaSterling",
-    sourceUrl: "https://archiveofourown.org/works/54738291",
-    sourcePlatform: "AO3",
-    currentChapters: 0,
-    totalChapters: "?",
-    lastCommentedChapter: 0,
-    shelves: JSON.stringify(["Marvel Avengers"]),
-    needsReview: 0,
-    status: "Unread",
-    dateDownloaded: "2026-05-19T06:00:00.000Z",
-    seriesName: "The Infinity Protocol",
-    seriesOrder: 3,
-    lastReadTimestamp: null,
-    activeParagraphIndex: 0,
-  },
-];
 
 export async function initDatabase(): Promise<void> {
   const db = await getDb();
 
+  // Core schema setup with structural verification
   await db.execAsync(`
     CREATE TABLE IF NOT EXISTS works (
       workId TEXT PRIMARY KEY,
       title TEXT NOT NULL,
       author TEXT NOT NULL,
+      publisher TEXT,
+      storyUuid TEXT,
+      fandom TEXT,
       sourceUrl TEXT,
       sourcePlatform TEXT NOT NULL DEFAULT 'AO3',
       currentChapters INTEGER NOT NULL DEFAULT 0,
@@ -181,80 +117,128 @@ export async function initDatabase(): Promise<void> {
       seriesName TEXT,
       seriesOrder INTEGER NOT NULL DEFAULT 0,
       lastReadTimestamp TEXT,
-      activeParagraphIndex INTEGER NOT NULL DEFAULT 0
+      activeParagraphIndex INTEGER NOT NULL DEFAULT 0,
+      isFavorite INTEGER NOT NULL DEFAULT 0,
+      isComplete INTEGER NOT NULL DEFAULT 0,
+      isFullyParsed INTEGER NOT NULL DEFAULT 0
     );
   `);
 
-  const countResult = await db.getFirstAsync<{ count: number }>(
-    "SELECT COUNT(*) as count FROM works"
-  );
-  if (countResult && countResult.count > 0) return;
-
-  for (const seed of SEED_DATA) {
-    await db.runAsync(
-      `INSERT INTO works (workId, title, author, sourceUrl, sourcePlatform,
-        currentChapters, totalChapters, lastCommentedChapter, shelves,
-        needsReview, status, dateDownloaded, seriesName, seriesOrder,
-        lastReadTimestamp, activeParagraphIndex)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        seed.workId,
-        seed.title,
-        seed.author,
-        seed.sourceUrl,
-        seed.sourcePlatform,
-        seed.currentChapters,
-        seed.totalChapters,
-        seed.lastCommentedChapter,
-        seed.shelves,
-        seed.needsReview,
-        seed.status,
-        seed.dateDownloaded,
-        seed.seriesName,
-        seed.seriesOrder,
-        seed.lastReadTimestamp,
-        seed.activeParagraphIndex,
-      ]
+  // Chapters relational table construction
+  await db.execAsync(`
+    CREATE TABLE IF NOT EXISTS chapters (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workId TEXT NOT NULL,
+      chapterNumber INTEGER NOT NULL,
+      title TEXT,
+      bodyText TEXT,
+      UNIQUE(workId, chapterNumber)
     );
+  `);
+
+  // Column delta migrations
+  const migrations = [
+    "ALTER TABLE works ADD COLUMN isFavorite INTEGER NOT NULL DEFAULT 0;",
+    "ALTER TABLE works ADD COLUMN isComplete INTEGER NOT NULL DEFAULT 0;",
+    "ALTER TABLE works ADD COLUMN isFullyParsed INTEGER NOT NULL DEFAULT 0;",
+    "ALTER TABLE works ADD COLUMN publisher TEXT;",
+    "ALTER TABLE works ADD COLUMN storyUuid TEXT;",
+    "ALTER TABLE works ADD COLUMN fandom TEXT;"
+  ];
+
+  for (const query of migrations) {
+    try { await db.execAsync(query); } catch (e) {}
   }
+
+  const countResult = await db.getFirstAsync<{ count: number }>("SELECT COUNT(*) as count FROM works");
+  if (countResult && countResult.count > 0) return;
 }
 
 export async function getAllWorks(): Promise<Work[]> {
   const db = await getDb();
-  const rows = await db.getAllAsync<WorkRow>(
-    "SELECT * FROM works ORDER BY dateDownloaded DESC"
-  );
+  const rows = await db.getAllAsync<WorkRow>("SELECT * FROM works ORDER BY dateDownloaded DESC");
   return rows.map(parseRow);
 }
 
-export async function updateWorkStatus(
-  workId: string,
-  status: Work["status"]
-): Promise<void> {
+export async function getAllIncompleteWorks(): Promise<Work[]> {
+  const db = await getDb();
+  const rows = await db.getAllAsync<WorkRow>("SELECT * FROM works WHERE isComplete = 0");
+  return rows.map(parseRow);
+}
+
+export async function updateWorkStatus(workId: string, status: Work["status"]): Promise<void> {
   const db = await getDb();
   const now = new Date().toISOString();
-  await db.runAsync(
-    "UPDATE works SET status = ?, lastReadTimestamp = ? WHERE workId = ?",
-    [status, now, workId]
-  );
+  await db.runAsync("UPDATE works SET status = ?, lastReadTimestamp = ? WHERE workId = ?", [status, now, workId]);
 }
 
 export async function markReviewed(workId: string): Promise<void> {
   const db = await getDb();
-  await db.runAsync("UPDATE works SET needsReview = 0 WHERE workId = ?", [
-    workId,
-  ]);
+  await db.runAsync("UPDATE works SET needsReview = 0 WHERE workId = ?", [workId]);
 }
 
-export async function updateProgress(
-  workId: string,
-  currentChapters: number,
-  activeParagraphIndex: number
-): Promise<void> {
+export async function updateProgress(workId: string, currentChapters: number, activeParagraphIndex: number): Promise<void> {
   const db = await getDb();
   const now = new Date().toISOString();
   await db.runAsync(
     "UPDATE works SET currentChapters = ?, activeParagraphIndex = ?, lastReadTimestamp = ? WHERE workId = ?",
     [currentChapters, activeParagraphIndex, now, workId]
+  );
+}
+
+export async function toggleFavorite(workId: string, currentStatus: boolean): Promise<void> {
+  const db = await getDb();
+  const numericValue = currentStatus ? 0 : 1;
+  await db.runAsync("UPDATE works SET isFavorite = ? WHERE workId = ?", [numericValue, workId]);
+}
+
+export async function saveWorkToDatabase(work: Work): Promise<void> {
+  const db = await getDb();
+  await db.runAsync(
+    `INSERT OR REPLACE INTO works (
+      workId, title, author, publisher, storyUuid, fandom, sourceUrl, sourcePlatform,
+      currentChapters, totalChapters, lastCommentedChapter, shelves,
+      needsReview, status, dateDownloaded, seriesName, seriesOrder,
+      lastReadTimestamp, activeParagraphIndex, isFavorite, isComplete, isFullyParsed
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      work.workId,
+      work.title,
+      work.author,
+      work.publisher,
+      work.storyUuid,
+      work.fandom,
+      work.sourceUrl,
+      work.sourcePlatform,
+      work.currentChapters,
+      work.totalChapters,
+      work.lastCommentedChapter,
+      JSON.stringify(work.shelves),
+      work.needsReview ? 1 : 0,
+      work.status,
+      work.dateDownloaded,
+      work.seriesName,
+      work.seriesOrder,
+      work.lastReadTimestamp,
+      work.activeParagraphIndex,
+      work.isFavorite ? 1 : 0,
+      work.isComplete,
+      work.isFullyParsed,
+    ]
+  );
+}
+
+export async function deleteWorkRecord(workId: string): Promise<void> {
+  const db = await getDb();
+  await db.runAsync("DELETE FROM works WHERE workId = ?", [workId]);
+  await db.runAsync("DELETE FROM chapters WHERE workId = ?", [workId]);
+}
+
+// 📦 NEW NATIVE FUNCTION: Handles atomic chapter text parsing inserts
+export async function insertChapter(chapter: Chapter): Promise<void> {
+  const db = await getDb();
+  await db.runAsync(
+    `INSERT OR REPLACE INTO chapters (workId, chapterNumber, title, bodyText) VALUES (?, ?, ?, ?)`,
+    [chapter.workId, chapter.chapterNumber, chapter.title, chapter.bodyText]
   );
 }

@@ -268,3 +268,93 @@ export const THEME_META: Record<ThemeId, { name: string; label: string; isDark: 
   viking: { name: "viking", label: "Viking Berk", isDark: true },
   lavender: { name: "lavender", label: "Lavender Phantasm", isDark: false },
 };
+
+export interface ThemeAccessory {
+  id: string;
+  favIconActive: string;    // When book IS a favorite
+  favIconInactive: string;  // When book IS NOT a favorite
+  favLabel: string;
+  mascotName: string;
+  mascotEmoji: string;
+  profileGreeting: string;
+}
+
+export const THEME_ACCESSORIES: Record<string, ThemeAccessory> = {
+  botanical: {
+    id: "botanical",
+    favIconActive: "🌸",
+    favIconInactive: "🌱",
+    favLabel: "Sprout a Favorite",
+    mascotName: "Sprout the Cat",
+    mascotEmoji: "🐱💤",
+    profileGreeting: "Welcome back to the greenhouse,",
+  },
+  cloudscape: {
+    id: "cloudscape",
+    favIconActive: "🌙",
+    favIconInactive: "☁️",
+    favLabel: "Written in the Stars",
+    mascotName: "Nimbus the Sky Whale",
+    mascotEmoji: "🐋✨",
+    profileGreeting: "Floating among your stories,",
+  },
+  shire: {
+    id: "shire",
+    favIconActive: "👑",
+    favIconInactive: "🌰",
+    favLabel: "Precious Reread",
+    mascotName: "Bramble the Elven Fawn",
+    mascotEmoji: "🦌귀",
+    profileGreeting: "Pull up a chair by the hearth,",
+  },
+  blush: {
+    id: "blush",
+    favIconActive: "💖",
+    favIconInactive: "🎀",
+    favLabel: "Cherished Story",
+    mascotName: "Pip the Velvet Bunny",
+    mascotEmoji: "🐰🌷",
+    profileGreeting: "Cozying up with your books,",
+  },
+  lofi: {
+    id: "lofi",
+    favIconActive: "✨",
+    favIconInactive: "☕",
+    favLabel: "Comfort Track",
+    mascotName: "Mocha the Mug Kitty",
+    mascotEmoji: "🐈🐾",
+    profileGreeting: "Lo-fi beats and open pages,",
+  },
+  origami: {
+    id: "origami",
+    favIconActive: "💝",
+    favIconInactive: "🦩",
+    favLabel: "Folded Heart",
+    mascotName: "Sora the Paper Crane",
+    mascotEmoji: "🕊️🎨",
+    profileGreeting: "Unfolding your next chapter,",
+  },
+  viking: {
+    id: "viking",
+    favIconActive: "🔥",
+    favIconInactive: "🛡️",
+    favLabel: "Saga Legend",
+    mascotName: "Ignis the Baby Ember Dragon",
+    mascotEmoji: "🐉🌋",
+    profileGreeting: "To glory and great tales,",
+  },
+  lavender: {
+    id: "lavender",
+    favIconActive: "🔮",
+    favIconInactive: "🕯️",
+    favLabel: "Enchanted Read",
+    mascotName: "Casper the Chibi Ghost Reader",
+    mascotEmoji: "👻📖",
+    profileGreeting: "Haunting the library with,",
+  },
+};
+
+// Safe fallback helper if a theme doesn't match perfectly
+export function getThemeAccessory(themeId: string): ThemeAccessory {
+  return THEME_ACCESSORIES[themeId] || THEME_ACCESSORIES.botanical;
+}

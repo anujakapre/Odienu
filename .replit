@@ -63,4 +63,4 @@ localPort = 18118
 externalPort = 3003
 
 [nix]
-packages = ["killall"]
+packages = ["killall", "twelf"]

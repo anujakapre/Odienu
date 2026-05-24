@@ -80,8 +80,8 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
+      <ThemeProvider>
       <ErrorBoundary>
-        <ThemeProvider>
           <QueryClientProvider client={queryClient}>
             <GestureHandlerRootView style={{ flex: 1 }}>
               <KeyboardProvider>
@@ -89,8 +89,8 @@ export default function RootLayout() {
               </KeyboardProvider>
             </GestureHandlerRootView>
           </QueryClientProvider>
-        </ThemeProvider>
-      </ErrorBoundary>
-    </SafeAreaProvider>
+        </ErrorBoundary>
+      </ThemeProvider>
+          </SafeAreaProvider>
   );
 }
