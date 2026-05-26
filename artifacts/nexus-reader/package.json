@@ -15,6 +15,7 @@
     "@react-native-picker/picker": "2.11.0",
     "@tanstack/react-query": "catalog:",
     "expo": "~54.0.27",
+    "expo-audio": "^56.0.10",
     "expo-av": "~16.0.8",
     "expo-blur": "~15.0.8",
     "expo-constants": "~18.0.11",

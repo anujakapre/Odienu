@@ -1,16 +1,32 @@
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system';
 
 const FOLDER_PATH_KEY = "nexus_reader_picked_folder_path";
 const FOLDER_URI_KEY = "nexus_reader_picked_folder_uri";
 
+function deriveReadablePath(uri: string): string {
+  try {
+    const decoded = decodeURIComponent(uri);
+    const parts = decoded.split('/tree/');
+    if (parts.length > 1) {
+      const pathSegment = parts[1].split(':');
+      if (pathSegment.length > 1) {
+        return pathSegment[1]; 
+      }
+    }
+    return "Selected Storage Folder";
+  } catch {
+    return "Custom Storage Folder";
+  }
+}
+
+// Ensure the folderPath state update bubbles up correctly so AppShell re-renders!
 export function useFolderPicker() {
   const [folderPath, setFolderPath] = useState<string | null>(null);
   const [folderUri, setFolderUri] = useState<string | null>(null);
   const [isPicking, setIsPicking] = useState<boolean>(false);
 
-  // 🔄 Automatically fetch the saved path on boot
   useEffect(() => {
     async function loadStoredDirectory() {
       try {
@@ -25,36 +41,32 @@ export function useFolderPicker() {
     loadStoredDirectory();
   }, []);
 
-  const pickFolder = async (): Promise<boolean> => {
-    if (isPicking) return false;
+  const pickFolder = async (): Promise<string | null> => {
+    if (isPicking) return null;
     setIsPicking(true);
 
     try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: '*/*',
-        copyToCacheDirectory: false,
-      });
+      const permissions = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
 
-      if (result.canceled) {
+      if (!permissions.granted) {
         setIsPicking(false);
-        return false;
+        return null; // Return null instead of false 
       }
 
-      const selectedUri = result.assets[0].uri;
-      const displayPath = result.assets[0].name || "Custom Storage Directory";
+      const selectedUri = permissions.directoryUri;
+      const displayPath = deriveReadablePath(selectedUri);
 
-      // Save to persistence layer
       await AsyncStorage.setItem(FOLDER_PATH_KEY, displayPath);
       await AsyncStorage.setItem(FOLDER_URI_KEY, selectedUri);
 
-      // Update state instantly across components
+      // Important: Ensure React state batches this properly so the hook returns new values
       setFolderPath(displayPath);
       setFolderUri(selectedUri);
 
-      return true;
+      return displayPath;
     } catch (error) {
       console.error("Directory target allocation failure:", error);
-      return false;
+      return null;
     } finally {
       setIsPicking(false);
     }

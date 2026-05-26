@@ -2,14 +2,15 @@ import React from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useLibrary } from "@/hooks/useLibrary";
-import { Work } from "@/lib/database";
+import { Work } from "@/lib/database.native";
 
 interface BookCardProps {
   work: Work;
   onPress: (work: Work) => void;
+  compact?: boolean;
 }
 
-export function BookCard({ work, onPress }: BookCardProps) {
+export function BookCard({ work, onPress, compact }: BookCardProps) {
   const { theme } = useTheme();
   const colors = theme.colors;
   const decorations = theme.decorations;
@@ -38,7 +39,6 @@ export function BookCard({ work, onPress }: BookCardProps) {
         pressed && styles.cardPressed,
       ]}
     >
-      {/* Dynamic Cover Asset Rendering Slot - Now 1:1 Aspect Ratio Square */}
       <View style={[styles.coverWrapper, { backgroundColor: colors.muted }]}>
         {work.coverUrl ? (
           <Image source={{ uri: work.coverUrl }} style={styles.coverImage} />
@@ -48,7 +48,6 @@ export function BookCard({ work, onPress }: BookCardProps) {
           </Text>
         )}
 
-        {/* 🎀 Whimsical Ornaments Made Significantly Larger and Noticeable */}
         <Pressable
           onPress={handleFavoritePress}
           style={[
@@ -66,10 +65,9 @@ export function BookCard({ work, onPress }: BookCardProps) {
         </Pressable>
       </View>
 
-      {/* Cleaned Metadata Layout Blocks (Duplicates Pulled Out) */}
       <View style={styles.metaDataContainer}>
         <View style={styles.titleRow}>
-          <Text style={[styles.bookTitleText, { color: colors.foreground }]} numberOfLines={2}>
+          <Text style={[styles.bookTitleText, { color: colors.foreground }]} numberOfLines={3}>
             {work.title}
           </Text>
           {!!work.isComplete && (
@@ -88,12 +86,12 @@ export function BookCard({ work, onPress }: BookCardProps) {
 
 const styles = StyleSheet.create({
   cardFrame: {
-    width: "47%", // Leaves an elegant gutter margin gap in your layout grid splits
+    width: 140, // standard fixed width to allow flex-wrapping internally
     borderWidth: 1,
     borderRadius: 16,
-    overflow: "visible", // Critical to allow large whimsical ribbons to overlap boundaries!
+    overflow: "visible", 
     marginBottom: 12,
-    marginHorizontal: "1.5%",
+    marginRight: 12, // margin-right handles grid layouts inside the scrollview
     elevation: 3,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
@@ -106,7 +104,7 @@ const styles = StyleSheet.create({
   },
   coverWrapper: {
     width: "100%",
-    aspectRatio: 1, // 📐 Forces the primary visual frame into a perfect clean square layout
+    aspectRatio: 1, 
     alignItems: "center",
     justifyContent: "center",
     position: "relative",
@@ -126,9 +124,9 @@ const styles = StyleSheet.create({
   },
   favoriteBadgeContainer: {
     position: "absolute",
-    top: -4, // Shifts it proudly over the top frame edge layout bounds
+    top: -4,
     right: -4,
-    width: 38, // Noticeably larger touch and display surface target
+    width: 38,
     height: 38,
     borderRadius: 19,
     borderWidth: 1.5,
@@ -141,7 +139,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   badgeEmojiIcon: {
-    fontSize: 20, // Emoji scales up inside the ribbon frame wrapper
+    fontSize: 20, 
   },
   metaDataContainer: {
     padding: 10,
@@ -153,6 +151,7 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     lineHeight: 16,
     flex: 1,
+    flexWrap: 'wrap', // Key change requested!
   },
   bookAuthorText: {
     fontSize: 11,
@@ -164,6 +163,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     gap: 4,
+    flexWrap: 'nowrap',
   },
   completeBadge: {
     paddingHorizontal: 5,

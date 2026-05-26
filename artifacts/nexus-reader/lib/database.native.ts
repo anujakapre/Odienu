@@ -18,6 +18,7 @@ export interface Work {
   dateDownloaded: string;
   seriesName: string | null;
   seriesOrder: number;
+  description: string;
   lastReadTimestamp: string | null;
   activeParagraphIndex: number;
   isFavorite: boolean; 
@@ -50,6 +51,7 @@ interface WorkRow {
   dateDownloaded: string;
   seriesName: string | null;
   seriesOrder: number;
+  description:string;
   lastReadTimestamp: string | null;
   activeParagraphIndex: number;
   isFavorite: number; 
@@ -61,7 +63,7 @@ let dbInstance: SQLite.SQLiteDatabase | null = null;
 
 async function getDb(): Promise<SQLite.SQLiteDatabase> {
   if (!dbInstance) {
-    dbInstance = await SQLite.openDatabaseAsync("nexus-reader.db");
+    dbInstance = await SQLite.openDatabaseAsync("nexus-reader-v1.db");
   }
   return dbInstance;
 }
@@ -85,6 +87,7 @@ function parseRow(row: WorkRow): Work {
     dateDownloaded: row.dateDownloaded,
     seriesName: row.seriesName,
     seriesOrder: row.seriesOrder,
+    description:row.description,
     lastReadTimestamp: row.lastReadTimestamp,
     activeParagraphIndex: row.activeParagraphIndex,
     isFavorite: row.isFavorite === 1,
@@ -96,7 +99,6 @@ function parseRow(row: WorkRow): Work {
 export async function initDatabase(): Promise<void> {
   const db = await getDb();
 
-  // Core schema setup with structural verification
   await db.execAsync(`
     CREATE TABLE IF NOT EXISTS works (
       workId TEXT PRIMARY KEY,
@@ -116,6 +118,7 @@ export async function initDatabase(): Promise<void> {
       dateDownloaded TEXT NOT NULL,
       seriesName TEXT,
       seriesOrder INTEGER NOT NULL DEFAULT 0,
+      description TEXT,
       lastReadTimestamp TEXT,
       activeParagraphIndex INTEGER NOT NULL DEFAULT 0,
       isFavorite INTEGER NOT NULL DEFAULT 0,
@@ -124,7 +127,6 @@ export async function initDatabase(): Promise<void> {
     );
   `);
 
-  // Chapters relational table construction
   await db.execAsync(`
     CREATE TABLE IF NOT EXISTS chapters (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -136,7 +138,6 @@ export async function initDatabase(): Promise<void> {
     );
   `);
 
-  // Column delta migrations
   const migrations = [
     "ALTER TABLE works ADD COLUMN isFavorite INTEGER NOT NULL DEFAULT 0;",
     "ALTER TABLE works ADD COLUMN isComplete INTEGER NOT NULL DEFAULT 0;",
@@ -149,9 +150,6 @@ export async function initDatabase(): Promise<void> {
   for (const query of migrations) {
     try { await db.execAsync(query); } catch (e) {}
   }
-
-  const countResult = await db.getFirstAsync<{ count: number }>("SELECT COUNT(*) as count FROM works");
-  if (countResult && countResult.count > 0) return;
 }
 
 export async function getAllWorks(): Promise<Work[]> {
@@ -219,6 +217,7 @@ export async function saveWorkToDatabase(work: Work): Promise<void> {
       work.dateDownloaded,
       work.seriesName,
       work.seriesOrder,
+      work.description,
       work.lastReadTimestamp,
       work.activeParagraphIndex,
       work.isFavorite ? 1 : 0,
@@ -234,7 +233,6 @@ export async function deleteWorkRecord(workId: string): Promise<void> {
   await db.runAsync("DELETE FROM chapters WHERE workId = ?", [workId]);
 }
 
-// 📦 NEW NATIVE FUNCTION: Handles atomic chapter text parsing inserts
 export async function insertChapter(chapter: Chapter): Promise<void> {
   const db = await getDb();
   await db.runAsync(

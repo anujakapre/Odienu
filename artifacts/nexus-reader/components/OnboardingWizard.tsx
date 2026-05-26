@@ -1,51 +1,19 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
-import { useAppConfig } from "@/hooks/useAppConfig";
+import { useFolderPicker } from '@/hooks/useFolderPicker';
 import { useTheme } from "@/contexts/ThemeContext";
+import { useRouter } from 'expo-router';
 
-// 1️⃣ Define the props expected by _layout.tsx
-interface OnboardingWizardProps {
-  onComplete: (folder: string) => void;
-}
-
-// 🎯 THE FIX: This is the main orchestrator component your _layout.tsx is trying to import!
-export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
-  const [currentStep, setCurrentStep] = useState(0);
-  const { config } = useAppConfig();
-
-  const handleFolderStepComplete = () => {
-    // If we have a folder path saved, finish the wizard completely
-    if (config?.user_download_folder) {
-      onComplete(config.user_download_folder);
-    } else {
-      // If they skipped, pass an empty string or default fallback
-      onComplete?.("");
-    }
-  };
-
-  // You can easily add more steps here later (e.g., Profile setting step)
-  if (currentStep === 0) {
-    return <OnboardingFolderStep onNextStep={handleFolderStepComplete} />;
-  }
-
-  return null;
-}
-
-// 2️⃣ Your step sub-component remains perfectly intact here
-interface StepProps {
-  onNextStep: () => void;
-}
-
-function OnboardingFolderStep({ onNextStep }: StepProps) {
+export function OnboardingWizard({ onComplete }: { onComplete: (path: string) => void }) {
   const { theme } = useTheme();
   const colors = theme.colors;
 
-  const { config, isPicking, pickAndSaveDirectory } = useAppConfig();
+  const { folderPath, pickFolder, isPicking } = useFolderPicker();
 
   const handlePress = async () => {
-    const savedPath = await pickAndSaveDirectory();
+    const savedPath = await pickFolder();
     if (savedPath) {
-      onNextStep();
+      onComplete(savedPath);
     }
   };
 
@@ -75,18 +43,18 @@ function OnboardingFolderStep({ onNextStep }: StepProps) {
           <ActivityIndicator color={colors.primaryForeground || "#FFFFFF"} size="small" />
         ) : (
           <Text style={[styles.btnText, { color: colors.primaryForeground || "#FFFFFF" }]}>
-            {config?.user_download_folder ? "Change Staging Folder" : "Select Intake Folder"}
+            {folderPath ? "Change Staging Folder" : "Select Intake Folder"}
           </Text>
         )}
       </TouchableOpacity>
 
-      {config?.user_download_folder && (
+      {folderPath && (
         <Text style={[styles.pathLabel, { color: colors.mutedForeground, borderColor: colors.border, backgroundColor: colors.card }]}>
-          Linked to: {formatPathDisplay(config.user_download_folder)}
+          Linked to: {formatPathDisplay(folderPath)}
         </Text>
       )}
 
-      <TouchableOpacity style={styles.skipBtn} onPress={onNextStep}>
+      <TouchableOpacity style={styles.skipBtn} onPress={() => onComplete("skipped_setup")}>
         <Text style={[styles.skipText, { color: colors.mutedForeground }]}>Configure later in settings</Text>
       </TouchableOpacity>
     </View>

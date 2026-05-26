@@ -11,10 +11,10 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { Picker } from "@react-native-picker/picker";
+import { Picker } from '@react-native-picker/picker'; 
+import { useFolderPicker } from '@/hooks/useFolderPicker';
 import * as Speech from "expo-speech";
 
-import { useAppConfig } from "@/hooks/useAppConfig"; // 👈 Import our upgraded config engine
 import { ThemeMascot } from "@/components/ThemeMascot";
 import { useTheme } from "@/contexts/ThemeContext";
 import { getTTSSettings, saveTTSSettings, TTSSettingsProfile, VoiceProfile } from "@/lib/ttsSettings";
@@ -23,14 +23,13 @@ export default function SettingsScreen() {
   const { theme } = useTheme();
   const colors = theme.colors;
 
-  // 🔄 Load AppConfig management layer
-  const { config, isPicking, pickAndSaveDirectory } = useAppConfig();
+  // 📂 Switched completely from old config parameters to explicit folder handling
+  const { folderPath, pickFolder, isPicking } = useFolderPicker();
 
   const [loading, setLoading] = useState(true);
   const [username, setUsername] = useState("");
   const [ao3Username, setAo3Username] = useState("");
 
-  // Advanced Vocal Processing Engines States
   const [ttsConfig, setTtsConfig] = useState<TTSSettingsProfile | null>(null);
   const [systemVoices, setSystemVoices] = useState<Speech.Voice[]>([]);
   const [isPreviewing, setIsPreviewing] = useState(false);
@@ -274,13 +273,12 @@ export default function SettingsScreen() {
         <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Text style={[styles.settingName, { color: colors.foreground }]}>Active Library Location</Text>
 
-          {/* 📁 Automatically references config state from hook mount */}
           <Text style={[styles.pathLabel, { color: colors.mutedForeground, backgroundColor: colors.background, borderColor: colors.border }]} numberOfLines={1}>
-            {formatPathDisplay(config?.user_download_folder)}
+            {formatPathDisplay(folderPath)}
           </Text>
 
           <Pressable 
-            onPress={pickAndSaveDirectory} 
+            onPress={pickFolder} 
             disabled={isPicking}
             style={[styles.actionButton, { backgroundColor: colors.primary + "15", borderColor: colors.primary }, isPicking && { opacity: 0.5 }]}
           >
@@ -296,7 +294,6 @@ export default function SettingsScreen() {
   );
 }
 
-// Keep your existing styles as defined below...
 const styles = StyleSheet.create({
   container: { flex: 1 },
   scrollContent: { padding: 20, paddingTop: Platform.OS === "ios" ? 60 : 30, paddingBottom: 60 },

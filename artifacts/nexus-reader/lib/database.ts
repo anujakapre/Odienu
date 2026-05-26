@@ -18,6 +18,7 @@ export interface Work {
   dateDownloaded: string;
   seriesName: string | null;
   seriesOrder: number;
+  description:string;       // 👈 Added for displaying blurbs on tap
   lastReadTimestamp: string | null;
   activeParagraphIndex: number;
   isFavorite: boolean;
@@ -55,6 +56,7 @@ const SEED_DATA: Work[] = [
     dateDownloaded: "2026-04-15T10:00:00.000Z",
     seriesName: null,
     seriesOrder: 0,
+    description: "a/b",
     lastReadTimestamp: "2026-05-18T22:30:00.000Z",
     activeParagraphIndex: 847,
     isFavorite: false,
@@ -79,6 +81,7 @@ const SEED_DATA: Work[] = [
     dateDownloaded: "2026-05-01T08:00:00.000Z",
     seriesName: null,
     seriesOrder: 0,
+    description: "a/b",
     lastReadTimestamp: "2026-05-17T20:00:00.000Z",
     activeParagraphIndex: 214,
     isFavorite: false,
