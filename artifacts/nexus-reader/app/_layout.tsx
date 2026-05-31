@@ -14,7 +14,7 @@ import { useColorScheme, ActivityIndicator, View, StyleSheet } from "react-nativ
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { SQLiteProvider } from 'expo-sqlite';
+import { SQLiteProvider } from "expo-sqlite";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -25,21 +25,26 @@ SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient();
 
+// 🧭 App Core Navigation Definition
 function RootLayoutNav() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
+      {/* Main Bottom Tabs Engine */}
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen 
-        name="settings" 
-        options={{ 
-          headerShown: false, 
-          presentation: "modal" 
-        }} 
+
+      {/* 👑 Settings Screen mounted perfectly as a global Slide-Up Modal */}
+      <Stack.Screen
+        name="settings"
+        options={{
+          headerShown: false,
+          presentation: "modal",
+        }}
       />
     </Stack>
   );
 }
 
+// 📦 AppShell: Validates library connections before loading main application navigation
 function AppShell() {
   const [folderPath, setFolderPath] = useState<string | null>(null);
   const [isCheckingFolder, setIsCheckingFolder] = useState<boolean>(true);
@@ -48,12 +53,17 @@ function AppShell() {
   useEffect(() => {
     async function loadStoredDirectory() {
       try {
-        const savedPath = await AsyncStorage.getItem("nexus_reader_picked_folder_path");
+        const savedPath = await AsyncStorage.getItem(
+          "nexus_reader_picked_folder_path",
+        );
         if (savedPath) {
           setFolderPath(savedPath);
         }
       } catch (err) {
-        console.warn("Failed to load automatically restored directory tokens:", err);
+        console.warn(
+          "Failed to load automatically restored directory tokens:",
+          err,
+        );
       } finally {
         setIsCheckingFolder(false);
       }
@@ -76,7 +86,7 @@ function AppShell() {
 
       {/* 2. The Wizard is rendered over top if no folder selection exists yet */}
       {!folderPath && (
-        <View style={StyleSheet.absoluteFill}>
+        <View style={[StyleSheet.absoluteFill, { zIndex: 100 }]}>
           <OnboardingWizard 
             onComplete={(path) => {
               const validatedPath = path || "skipped_setup";
@@ -117,7 +127,8 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <SQLiteProvider databaseName="nexus-reader.db">
+      {/* Fix: SQLiteProvider prevents db lock by matching the actual db name and safely wrapping providers */}
+      <SQLiteProvider databaseName="nexus-readerv1.db">
         <ThemeProvider>
           <ErrorBoundary>
             <QueryClientProvider client={queryClient}>

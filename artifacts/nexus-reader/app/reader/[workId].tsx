@@ -13,6 +13,7 @@ import { speakChapter, stopSpeaking } from "@/lib/speechPlayer";
 import { lazyLoadRemainingChapters } from "@/lib/fileIngestion";
 import { useSQLiteContext } from "expo-sqlite";
 import { useLibrary } from "@/hooks/useLibrary";
+import { ThemeMascot } from "@/components/ThemeMascot";
 
 export default function ReaderScreen() {
   const { workId } = useLocalSearchParams();
@@ -25,13 +26,15 @@ export default function ReaderScreen() {
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [bookTitle, setBookTitle] = useState("Loading Book...");
+  const [bookTitle, setBookTitle] = useState("Loading...");
   const [bookAuthor, setBookAuthor] = useState("Unknown Author");
   const [bookFandom, setBookFandom] = useState("");
-  const [sourceUrl, setSourceUrl] = useState<string | null>(null);
   const [chapterText, setChapterText] = useState("");
   const [chapterNumber, setChapterNumber] = useState(1);
   const [scrollProgress, setScrollProgress] = useState(0);
+
+  const work = works?.find((w) => w.workId === workId);
+  const isFavorite = work?.isFavorite ?? false;
 
   const handleScroll = (event: any) => {
     const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
@@ -42,12 +45,9 @@ export default function ReaderScreen() {
       const progress = Math.min(Math.max(currentOffset / maxOffset, 0), 1);
       setScrollProgress(progress);
     } else {
-      setScrollProgress(1); // Content is entirely visible
+      setScrollProgress(1);
     }
   };
-
-  const work = works?.find((w) => w.workId === workId);
-  const isFavorite = work?.isFavorite ?? false;
 
   useEffect(() => {
     async function loadStoryData() {
@@ -63,16 +63,14 @@ export default function ReaderScreen() {
           title: string;
           author: string;
           fandom: string;
-          sourceUrl: string;
         }>(
-          "SELECT title, author, fandom, sourceUrl FROM works WHERE workId = ?",
+          "SELECT title, author, fandom FROM works WHERE workId = ?",
           [workId as string],
         );
         if (workRow) {
           setBookTitle(workRow.title);
           setBookAuthor(workRow.author || "Unknown Author");
           setBookFandom(workRow.fandom || "General");
-          setSourceUrl(workRow.sourceUrl || null);
         }
 
         const chapterRow = await db.getFirstAsync<{
@@ -107,18 +105,16 @@ export default function ReaderScreen() {
     loadStoryData();
   }, [workId]);
 
-  // Debounced database sync for scroll tracking
   useEffect(() => {
     if (!workId) return;
     const timeoutId = setTimeout(() => {
-      // Background SQLite execution ensures this off-loads without blocking the React render thread
       db.runAsync(
         `UPDATE works SET activeParagraphIndex = ? WHERE workId = ?`,
         [Math.floor(scrollProgress * 1000), workId as string],
       ).catch((err) =>
-        console.warn("Failed to save background reading progress", err),
+        console.warn("Failed to set background progress", err),
       );
-    }, 1500); // 1.5 second debounce delay
+    }, 1500);
     return () => clearTimeout(timeoutId);
   }, [scrollProgress, workId]);
 
@@ -154,7 +150,7 @@ export default function ReaderScreen() {
       >
         <ActivityIndicator size="large" color={colors.primary} />
         <Text style={{ color: colors.mutedForeground, marginTop: 12 }}>
-          Reading Database Blocks...
+          Extracting text blocks...
         </Text>
       </View>
     );
@@ -194,23 +190,9 @@ export default function ReaderScreen() {
           >
             Chapter {chapterNumber} • {bookFandom} - {bookAuthor}
           </Text>
-          {sourceUrl && (
-            <Pressable onPress={() => {}} style={{ marginTop: 4 }}>
-              <Text
-                style={{
-                  color: colors.primary,
-                  fontSize: 12,
-                  fontWeight: "600",
-                }}
-              >
-                [Source URL]
-              </Text>
-            </Pressable>
-          )}
         </View>
       </View>
 
-      {/* Reading Progress Bar attached seamlessly under the header layout */}
       <View
         style={{
           height: 4,
@@ -239,9 +221,6 @@ export default function ReaderScreen() {
             styles.bodyText,
             {
               color: colors.foreground,
-              fontSize: 19,
-              lineHeight: 30,
-              letterSpacing: 0.2,
             },
           ]}
         >
@@ -256,7 +235,6 @@ export default function ReaderScreen() {
           { backgroundColor: colors.card, borderColor: colors.border },
         ]}
       >
-        {/* Playback Controls */}
         <View style={styles.dockRow}>
           <Pressable style={styles.stepBtn}>
             <Text style={[styles.stepText, { color: colors.foreground }]}>
@@ -295,7 +273,6 @@ export default function ReaderScreen() {
           </Pressable>
         </View>
 
-        {/* Action Tray */}
         <View style={[styles.favoriteRow, { borderTopColor: colors.border }]}>
           <Pressable
             onPress={handleFavoriteToggle}
@@ -310,6 +287,10 @@ export default function ReaderScreen() {
               {isFavorite ? "Favorited!" : theme.decorations.favoriteLabel}
             </Text>
           </Pressable>
+          <View style={styles.badgeWrapper}>
+            <Text style={{ fontSize: 10, marginRight: 8, color: colors.mutedForeground, fontWeight: "600" }}>{theme.decorations.mascotName} Asset</Text>
+            <ThemeMascot size={32} />
+          </View>
         </View>
       </View>
     </View>
@@ -332,8 +313,8 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 18, fontWeight: "700", lineHeight: 22 },
   headerAuthor: { fontSize: 13, fontWeight: "500", opacity: 0.8 },
   scroller: { flex: 1 },
-  scrollContent: { padding: 24, paddingBottom: 160 },
-  bodyText: { fontWeight: "400" },
+  scrollContent: { padding: 24, paddingBottom: 180 },
+  bodyText: { fontWeight: "400", fontSize: 19, lineHeight: 30, letterSpacing: 0.2 },
   dockContainer: {
     position: "absolute",
     bottom: 30,
@@ -359,7 +340,7 @@ const styles = StyleSheet.create({
   stepText: { fontSize: 12, fontWeight: "600" },
   dockPlayBtn: { paddingVertical: 12, paddingHorizontal: 28, borderRadius: 50 },
   dockPlayBtnText: { fontSize: 16, fontWeight: "800" },
-  favoriteRow: { borderTopWidth: 1, paddingTop: 12, alignItems: "center" },
+  favoriteRow: { borderTopWidth: 1, paddingTop: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   favoriteButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -369,4 +350,9 @@ const styles = StyleSheet.create({
   },
   favoriteEmoji: { fontSize: 18 },
   favoriteText: { fontSize: 14, fontWeight: "700" },
+  badgeWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingRight: 12,
+  }
 });

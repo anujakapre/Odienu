@@ -20,8 +20,10 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#0f0e17",
-        "permissions": ["WAKE_LOCK"]
-        }
+        "permissions": [
+          "WAKE_LOCK"
+        ]
+      }
     },
     "web": {
       "favicon": "./assets/images/icon.png"
@@ -35,8 +37,10 @@
       ],
       "expo-font",
       "expo-web-browser",
+      "expo-file-system",
+      "expo-splash-screen",
       "expo-sqlite",
-      "expo-file-system"
+      "expo-audio"
     ],
     "experiments": {
       "typedRoutes": true,

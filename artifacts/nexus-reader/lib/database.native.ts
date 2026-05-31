@@ -63,7 +63,7 @@ let dbInstance: SQLite.SQLiteDatabase | null = null;
 
 async function getDb(): Promise<SQLite.SQLiteDatabase> {
   if (!dbInstance) {
-    dbInstance = await SQLite.openDatabaseAsync("nexus-reader-v1.db");
+    dbInstance = await SQLite.openDatabaseAsync("nexus-readerv1.db");
   }
   return dbInstance;
 }

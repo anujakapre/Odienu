@@ -11,9 +11,10 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-import { ShelfGrid } from "./components/ShelfGrid";
-import { MascotSVG } from "./components/MascotSVG";
+import { ShelfGrid } from "@/components/ShelfGrid";
+import { MascotSVG } from "@/components/MascotSVG";
 
 import { useTheme, THEMES } from "@/contexts/ThemeContext";
 import { useLibrary } from "@/hooks/useLibrary";
@@ -22,16 +23,16 @@ import { Work } from "@/lib/database.native";
 import { syncLocalFilesSilently } from "@/lib/fileIngestion";
 
 const THEME_TITLES: Record<string, string[]> = {
-    default: ["Signal Seeker", "Matrix Voyager", "Gremlin Whisperer"],
-    shire: ["Wanderer", "Cider Brewer", "Lore Weaver"],
-    lofi: ["Honeybean", "Espresso Sipper", "Calico Napper"],
-    viking: ["Brave Heart", "Shield Bearer", "Saga Sailor"],
-    archives: ["Archive Keeper", "Rune Decipherer", "Codex Guardian"],
-    botanical: ["Sproutlet", "Tea Brewer", "Forest Keeper"],
-    cloudscape: ["Sky Drifter", "Star Gazer", "Wind Rider"],
-    blush: ["Dreamer", "Velvet Reader", "Pastel Writer"],
-    origami: ["Paper Folder", "Ink Weaver", "Washi Crafter"],
-    lavender: ["Spirit Caller", "Dream Walker", "Mystic Reader"],
+  default: ["Signal Seeker", "Matrix Voyager", "Gremlin Whisperer"],
+  shire: ["Wanderer", "Cider Brewer", "Lore Weaver"],
+  lofi: ["Honeybean", "Espresso Sipper", "Calico Napper"],
+  viking: ["Brave Heart", "Shield Bearer", "Saga Sailor"],
+  archives: ["Archive Keeper", "Rune Decipherer", "Codex Guardian"],
+  botanical: ["Sproutlet", "Tea Brewer", "Forest Keeper"],
+  cloudscape: ["Sky Drifter", "Star Gazer", "Wind Rider"],
+  blush: ["Dreamer", "Velvet Reader", "Pastel Writer"],
+  origami: ["Paper Folder", "Ink Weaver", "Washi Crafter"],
+  lavender: ["Spirit Caller", "Dream Walker", "Mystic Reader"],
 };
 
 export default function HomeScreen() {
@@ -40,11 +41,21 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = React.useState(false);
 
-  // Provide mock empty implementations directly into the view to unblock compiler if useLibrary is missing/broken
-  const { dashboard, loading, error, refresh, syncLocalFiles } = useLibrary() || {
-     dashboard: { newUpdates: [], currentlyReading: [], recentlyRead: [], readThisMonth: [], fandomShelves: [], originalFiction: null },
-     loading: false, error: null, refresh: async () => {}, syncLocalFiles: async () => {}
-  };
+  const { dashboard, loading, error, refresh, syncLocalFiles } =
+    useLibrary() || {
+      dashboard: {
+        newUpdates: [],
+        currentlyReading: [],
+        recentlyRead: [],
+        readThisMonth: [],
+        fandomShelves: [],
+        originalFiction: null,
+      },
+      loading: false,
+      error: null,
+      refresh: async () => {},
+      syncLocalFiles: async () => {},
+    };
 
   const scrollY = useRef(new Animated.Value(0)).current;
   const floatAnim = useRef(new Animated.Value(0)).current;
@@ -63,7 +74,7 @@ export default function HomeScreen() {
           duration: 1500,
           useNativeDriver: true,
         }),
-      ])
+      ]),
     ).start();
 
     Animated.loop(
@@ -77,19 +88,18 @@ export default function HomeScreen() {
           toValue: 0,
           duration: 3000,
           useNativeDriver: true,
-        })
-      ])
+        }),
+      ]),
     ).start();
   }, [floatAnim, spinAnim]);
 
   const spin = spinAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: ['-5deg', '5deg']
+    outputRange: ["-5deg", "5deg"],
   });
 
-  // Dynamic greeting using randomized themes array mapping
   const greetingName = useMemo(() => {
-    const titles = THEME_TITLES[themeId] || THEME_TITLES['default'];
+    const titles = THEME_TITLES[themeId] || THEME_TITLES["default"];
     return titles[Math.floor(Math.random() * titles.length)];
   }, [themeId]);
 
@@ -116,29 +126,35 @@ export default function HomeScreen() {
 
   if (loading) {
     return (
-      <View style={[styles.centered, { backgroundColor: colors.background }]}> 
+      <View style={[styles.centered, { backgroundColor: colors.background }]}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={[styles.loadingText, { color: colors.mutedForeground }]}>Loading Oidenu...</Text>
+        <Text style={[styles.loadingText, { color: colors.mutedForeground }]}>
+          Loading Oidenu...
+        </Text>
       </View>
     );
   }
 
   if (error) {
     return (
-      <View style={[styles.centered, { backgroundColor: colors.background }]}> 
-        <Text style={[styles.errorText, { color: colors.destructive ?? '#ef4444' }]}>{error}</Text>
+      <View style={[styles.centered, { backgroundColor: colors.background }]}>
+        <Text
+          style={[styles.errorText, { color: colors.destructive ?? "#ef4444" }]}
+        >
+          {error}
+        </Text>
       </View>
     );
   }
 
   return (
-    <View style={[styles.root, { backgroundColor: colors.background }]}> 
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
       <Animated.ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.scroll, { paddingTop: totalPaddingTop }]}
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-          { useNativeDriver: true }
+          { useNativeDriver: true },
         )}
         scrollEventThrottle={16}
         refreshControl={
@@ -152,56 +168,85 @@ export default function HomeScreen() {
       >
         <View style={styles.heroHeader}>
           <View style={{ flex: 1 }}>
-            <Text style={[styles.appName, { color: colors.foreground }]}>{greetingName}!</Text>
-            <Text style={[styles.appSub, { color: colors.mutedForeground }]}>{theme.decorations.profileGreeting} welcome back.</Text>
+            <Text style={[styles.appName, { color: colors.foreground }]}>
+              {greetingName}!
+            </Text>
+            <Text style={[styles.appSub, { color: colors.mutedForeground }]}>
+              {theme.decorations.profileGreeting} welcome back.
+            </Text>
           </View>
 
           <View style={styles.headerControls}>
-            <Pressable 
+            <Pressable
               onPress={cycleTheme}
-              style={[styles.settingsButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+              style={[
+                styles.settingsButton,
+                { backgroundColor: colors.card, borderColor: colors.border },
+              ]}
             >
               <Text style={{ fontSize: 18 }}>🎨</Text>
             </Pressable>
-            <Pressable 
+            <Pressable
               onPress={() => router.push("/settings")}
               style={({ pressed }) => [
-                styles.settingsButton, 
+                styles.settingsButton,
                 { backgroundColor: colors.card, borderColor: colors.border },
-                pressed && { opacity: 0.7 }
+                pressed && { opacity: 0.7 },
               ]}
             >
               <Text style={{ fontSize: 18 }}>⚙️</Text>
             </Pressable>
-            <Pressable 
+            <Pressable
               onPress={async () => {
-                await syncLocalFilesSilently();
-                await refresh(); // Force dashboard view reload after silent SQLite upserts
+                const folderPathToken = await AsyncStorage.getItem(
+                  "nexus_reader_picked_folder_path",
+                );
+                if (folderPathToken) {
+                  await syncLocalFilesSilently();
+                  await refresh();
+                } else {
+                  console.warn(
+                    "No folder selected yet. Configure via settings.",
+                  );
+                }
               }}
-              style={[styles.settingsButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+              style={[
+                styles.settingsButton,
+                { backgroundColor: colors.card, borderColor: colors.border },
+              ]}
             >
               <Text style={{ fontSize: 18 }}>🔄</Text>
             </Pressable>
           </View>
         </View>
 
-        {/* Mascot Bubble Container */}
-        <Animated.View style={[
-          styles.mascotBubbleContainer, 
-          { 
-            backgroundColor: colors.card, 
-            borderColor: colors.border,
-            transform: [
-              { translateY: floatAnim },
-              { rotate: spin },
-              { translateY: scrollY.interpolate({ inputRange: [-100, 0, 100], outputRange: [10, 0, -10], extrapolate: 'clamp' }) }
-            ]
-          }
-        ]}>
-          <MascotSVG size={60} />
+        <Animated.View
+          style={[
+            styles.mascotBubbleContainer,
+            {
+              backgroundColor: colors.card,
+              borderColor: colors.border,
+              transform: [
+                { translateY: floatAnim },
+                { rotate: spin },
+                {
+                  translateY: scrollY.interpolate({
+                    inputRange: [-100, 0, 100],
+                    outputRange: [10, 0, -10],
+                    extrapolate: "clamp",
+                  }),
+                },
+              ],
+            },
+          ]}
+        >
+          <MascotSVG themeId={themeId} primaryColor={colors.primary} size={60} />
           <View style={styles.bubbleTextWrapper}>
-            <Text style={[styles.mascotBubbleText, { color: colors.foreground }]}>
-              "{theme.decorations.mascotName} is floating here to guide your reading today. All files secured!"
+            <Text
+              style={[styles.mascotBubbleText, { color: colors.foreground }]}
+            >
+              "{theme.decorations.mascotName} is floating here to guide your
+              reading today. All files secured!"
             </Text>
           </View>
         </Animated.View>
@@ -211,28 +256,78 @@ export default function HomeScreen() {
             {dashboard.newUpdates && dashboard.newUpdates.length > 0 && (
               <View style={styles.section}>
                 <View style={styles.updateHeader}>
-                  <Text style={[styles.sectionTitle, { color: colors.updateGlow ?? colors.primary }]}>New Updates</Text>
+                  <Text
+                    style={[
+                      styles.sectionTitle,
+                      { color: colors.updateGlow ?? colors.primary },
+                    ]}
+                  >
+                    New Updates
+                  </Text>
                 </View>
-                <ShelfGrid title="" works={dashboard.newUpdates} glowCards onPressWork={handlePressWork} horizontal={true} />
+                <ShelfGrid
+                  title=""
+                  works={dashboard.newUpdates}
+                  glowCards
+                  onPressWork={handlePressWork}
+                  horizontal={true}
+                />
               </View>
             )}
 
-            {dashboard.currentlyReading && dashboard.currentlyReading.length > 0 && <ShelfGrid title={theme.decorations.shelfCurrentlyReading} works={dashboard.currentlyReading} onPressWork={handlePressWork} />}
-            {dashboard.recentlyRead && dashboard.recentlyRead.length > 0 && <ShelfGrid title={theme.decorations.shelfRead} works={dashboard.recentlyRead} onPressWork={handlePressWork} horizontal={true} />}
-            {dashboard.readThisMonth && dashboard.readThisMonth.length > 0 && <ShelfGrid title="Read This Month" works={dashboard.readThisMonth} onPressWork={handlePressWork} />}
+            {dashboard.currentlyReading &&
+              dashboard.currentlyReading.length > 0 && (
+                <ShelfGrid
+                  title={theme.decorations.shelfCurrentlyReading}
+                  works={dashboard.currentlyReading}
+                  onPressWork={handlePressWork}
+                />
+              )}
+            {dashboard.recentlyRead && dashboard.recentlyRead.length > 0 && (
+              <ShelfGrid
+                title={theme.decorations.shelfRead}
+                works={dashboard.recentlyRead}
+                onPressWork={handlePressWork}
+                horizontal={true}
+              />
+            )}
+            {dashboard.readThisMonth && dashboard.readThisMonth.length > 0 && (
+              <ShelfGrid
+                title="Read This Month"
+                works={dashboard.readThisMonth}
+                onPressWork={handlePressWork}
+              />
+            )}
 
             {dashboard.fandomShelves && dashboard.fandomShelves.length > 0 && (
               <View style={styles.fandomSection}>
-                <View style={[styles.sectionDivider, { backgroundColor: colors.border }]} />
-                <Text style={[styles.fandomSectionLabel, { color: colors.mutedForeground }]}>Fandom Shelves</Text>
+                <View
+                  style={[
+                    styles.sectionDivider,
+                    { backgroundColor: colors.border },
+                  ]}
+                />
+                <Text
+                  style={[
+                    styles.fandomSectionLabel,
+                    { color: colors.mutedForeground },
+                  ]}
+                >
+                  Fandom Shelves
+                </Text>
               </View>
             )}
 
-            {dashboard.fandomShelves && dashboard.fandomShelves.map((shelf: any) => (
-              <View key={shelf.fandomName}>
-                <ShelfGrid title={shelf.fandomName} works={shelf.works} onPressWork={handlePressWork} />
-              </View>
-            ))}
+            {dashboard.fandomShelves &&
+              dashboard.fandomShelves.map((shelf: any) => (
+                <View key={shelf.fandomName}>
+                  <ShelfGrid
+                    title={shelf.fandomName}
+                    works={shelf.works}
+                    onPressWork={handlePressWork}
+                  />
+                </View>
+              ))}
           </>
         )}
       </Animated.ScrollView>
@@ -242,38 +337,61 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  centered: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
+  centered: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 24,
+  },
   loadingText: { marginTop: 12, fontSize: 15 },
   errorText: { fontSize: 15, textAlign: "center" },
   scroll: { paddingBottom: 140 },
-  heroHeader: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 20, marginBottom: 18 },
+  heroHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingHorizontal: 20,
+    marginBottom: 18,
+  },
   appName: { fontSize: 24, fontWeight: "900", letterSpacing: 0.5 },
   appSub: { marginTop: 4, fontSize: 13 },
   headerControls: { flexDirection: "row", alignItems: "center", gap: 10 },
-  settingsButton: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, alignItems: "center", justifyContent: "center" },
+  settingsButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   section: { marginTop: 18 },
   updateHeader: { paddingHorizontal: 20, marginBottom: 10 },
   sectionTitle: { fontSize: 16, fontWeight: "800" },
   fandomSection: { marginTop: 18, paddingHorizontal: 20 },
   sectionDivider: { height: StyleSheet.hairlineWidth, marginBottom: 10 },
-  fandomSectionLabel: { fontSize: 12, fontWeight: "700", letterSpacing: 1.2, textTransform: "uppercase" },
+  fandomSectionLabel: {
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
+  },
   mascotBubbleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginHorizontal: 16,
     padding: 16,
     borderRadius: 20,
     borderWidth: 1,
     marginBottom: 24,
-    gap: 16
+    gap: 16,
   },
   bubbleTextWrapper: {
-    flex: 1
+    flex: 1,
   },
   mascotBubbleText: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
     lineHeight: 20,
-    fontStyle: 'italic'
-  }
+    fontStyle: "italic",
+  },
 });
