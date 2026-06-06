@@ -17,13 +17,19 @@
       "supportsTablet": false
     },
     "android": {
+      "permissions": [
+        "WAKE_LOCK",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.INTERNET"
+      ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
-        "backgroundColor": "#0f0e17",
-        "permissions": [
-          "WAKE_LOCK"
-        ]
-      }
+        "backgroundColor": "#0f0e17"
+      },
+      "package": "com.petals_sunwards.oidenu"
     },
     "web": {
       "favicon": "./assets/images/icon.png"
@@ -37,14 +43,20 @@
       ],
       "expo-font",
       "expo-web-browser",
-      "expo-file-system",
-      "expo-splash-screen",
       "expo-sqlite",
-      "expo-audio"
+      "expo-file-system"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {
+        "origin": "https://replit.com/"
+      },
+      "eas": {
+        "projectId": "188da57e-0a38-4385-b50a-690111517262"
+      }
     }
   }
 }

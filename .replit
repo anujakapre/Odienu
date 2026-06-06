@@ -1,4 +1,4 @@
-modules = ["nodejs-24", "python-3.11"]
+modules = ["nodejs-20", "nodejs-24", "python-3.11"]
 
 [deployment]
 router = "application"
@@ -63,4 +63,4 @@ localPort = 18118
 externalPort = 3003
 
 [nix]
-packages = ["killall", "twelf", "sqlite"]
+packages = ["killall", "twelf","sqlite3"]
